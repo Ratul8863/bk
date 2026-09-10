@@ -1,0 +1,11 @@
+export { AdminShell } from './AdminShell';
+export { CollectionListPage } from './CollectionListPage';
+export { CollectionEditorPage } from './CollectionEditorPage';
+export { DashboardPage } from './DashboardPage';
+export { HomepageEditorPage } from './HomepageEditorPage';
+export { NavigationEditorPage } from './NavigationEditorPage';
+export { SettingsEditorPage } from './SettingsEditorPage';
+export { MediaLibraryPage } from './MediaLibraryPage';
+export { SystemPage } from './SystemPage';
+export { collectionConfigs } from './collections';
+export type { AdminCollectionSlug } from './collections';

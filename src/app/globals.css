@@ -1,0 +1,144 @@
+@import "tailwindcss";
+@import "lenis/dist/lenis.css";
+
+/*
+  BKSR design tokens — logo-aligned
+  Navy / royal blue primary · red signature accent · warm white surfaces
+  (~70% warm white, ~20% navy, ~7% soft blue, ~3% red)
+*/
+
+:root {
+  --bksr-navy: #173b6c;
+  --bksr-deep-navy: #0d2745;
+  --bksr-blue: #24558a;
+  --bksr-red: #b83a3a;
+
+  --surface-blue: #eaf0f6;
+  --surface-blue-subtle: #f2f5f8;
+  --warm-white: #f8f7f3;
+  --white: #ffffff;
+
+  --text-primary: #17212b;
+  --text-secondary: #68727d;
+  --border-soft: #d9dee5;
+
+  /* Semantic aliases used across the app */
+  --color-paper: var(--warm-white);
+  --color-ink: var(--bksr-deep-navy);
+  --color-accent: var(--bksr-navy);
+  --color-sage: var(--surface-blue);
+  --color-body: var(--text-primary);
+  --color-muted: var(--text-secondary);
+  --color-border: var(--border-soft);
+  --color-bronze: var(--bksr-red);
+  --color-brand-blue: var(--bksr-blue);
+  --color-brand-red: var(--bksr-red);
+  --color-surface: var(--surface-blue);
+  --color-surface-subtle: var(--surface-blue-subtle);
+  --color-white: var(--white);
+}
+
+@theme inline {
+  --color-paper: #f8f7f3;
+  --color-ink: #0d2745;
+  --color-accent: #173b6c;
+  --color-sage: #eaf0f6;
+  --color-body: #17212b;
+  --color-muted: #68727d;
+  --color-border: #d9dee5;
+  --color-bronze: #b83a3a;
+  --color-brand-blue: #24558a;
+  --color-brand-red: #b83a3a;
+  --color-surface: #eaf0f6;
+  --color-surface-subtle: #f2f5f8;
+  --color-white: #ffffff;
+  --font-display: var(--font-adlam-display), "ADLaM Display", ui-rounded, system-ui, sans-serif;
+  --font-sans: var(--font-manrope), "Manrope", ui-sans-serif, system-ui, sans-serif;
+  --font-instrument: var(--font-instrument-sans), "Instrument Sans", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: var(--font-newsreader), "Newsreader", ui-serif, Georgia, serif;
+}
+
+/* Native CSS smooth scroll fights Lenis — leave scroll-behavior alone. */
+html {
+  scroll-behavior: auto;
+  overflow-x: clip;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html {
+    scroll-behavior: auto;
+  }
+
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+body {
+  background-color: var(--color-paper);
+  color: var(--color-body);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  overflow-x: clip;
+}
+
+::selection {
+  background-color: color-mix(in srgb, var(--bksr-navy) 22%, transparent);
+  color: var(--color-ink);
+}
+
+:focus-visible {
+  outline: 2px solid var(--bksr-navy);
+  outline-offset: 3px;
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible,
+[role="button"]:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--bksr-navy);
+  outline-offset: 3px;
+}
+
+/* Research-firm surfaces — hairlines over shadows */
+.bksr-panel {
+  background-color: var(--white);
+  border: 1px solid var(--border-soft);
+}
+
+.bksr-panel-soft {
+  background-color: var(--white);
+  border: 1px solid var(--border-soft);
+}
+
+.bksr-tile {
+  position: relative;
+  background-color: var(--warm-white);
+  transition: background-color 0.2s ease;
+}
+
+.bksr-tile:hover {
+  background-color: var(--white);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bksr-tile {
+    transition: none;
+  }
+}
+
+@keyframes bksr-marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}

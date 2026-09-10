@@ -1,0 +1,151 @@
+/* Our Programs — Figma 175:90 continuous morph (no hard active/near swap) */
+
+.program-wheel-card {
+  --focus: 0;
+  contain: layout style;
+  will-change: transform, opacity;
+  backface-visibility: hidden;
+}
+
+/* Navy shell → two sibling rounded panels; --focus 0=strip … 1=tall */
+.program-card-shell {
+  box-sizing: border-box;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  align-items: stretch;
+  width: 100%;
+  gap: calc(1.75px + 0.75px * var(--focus));
+  padding: calc(3.5px + 1.5px * var(--focus));
+  border-radius: calc(22px + 13px * var(--focus));
+  background: #0b233f;
+  color: #0b233f;
+}
+
+.program-card-media,
+.program-card-copy {
+  min-width: 0;
+  border-radius: calc(20px + 12px * var(--focus));
+}
+
+.program-card-media {
+  position: relative;
+  overflow: hidden;
+  background: #d9d9d9;
+  /* Neighbor ~6.75rem → active min(23rem, 52svh) */
+  height: calc(
+    6.75rem + (min(23rem, 52svh) - 6.75rem) * var(--focus)
+  );
+}
+
+.program-card-media img {
+  object-fit: cover;
+}
+
+.program-card-copy {
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  height: calc(
+    6.75rem + (min(23rem, 52svh) - 6.75rem) * var(--focus)
+  );
+  padding: calc(11px + 6px * var(--focus));
+  gap: calc(8px + 5px * var(--focus));
+  background: #fff;
+  color: #0b233f;
+}
+
+.program-card-copy-top {
+  display: flex;
+  flex-direction: column;
+  gap: calc(8px + 5px * var(--focus));
+  min-width: 0;
+}
+
+.program-card-title {
+  margin: 0;
+  font-family: var(--font-sans, inherit);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0b233f;
+  font-size: calc(1.15rem + 1.15rem * var(--focus));
+  line-height: 1.15;
+}
+
+.program-card-summary {
+  margin: 0;
+  font-family: var(--font-sans, inherit);
+  font-weight: 400;
+  color: #0b233f;
+  font-size: calc(0.72rem + 0.11rem * var(--focus));
+  line-height: 1.45;
+  display: -webkit-box;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+}
+
+.program-card-explore {
+  display: flex;
+  width: 100%;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  overflow: hidden;
+  height: calc(var(--focus) * 2.85rem);
+  margin-top: calc(var(--focus) * 0.35rem);
+  padding: calc(var(--focus) * 13px) calc(var(--focus) * 16px);
+  border-radius: 15px;
+  background: #0b233f;
+  color: #fff;
+  font-family: var(--font-sans, inherit);
+  font-size: 13px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-decoration: none;
+  opacity: var(--focus);
+  pointer-events: none;
+}
+
+.program-wheel-card.is-interactive .program-card-explore {
+  pointer-events: auto;
+}
+
+.program-wheel-card.is-interactive .program-card-explore:hover {
+  opacity: 0.92;
+}
+
+/* Reduced-motion / static list: always fully expanded */
+.program-wheel-card.is-active {
+  --focus: 1;
+}
+
+@media (max-width: 640px) {
+  .program-card-shell {
+    grid-template-columns: 1fr 1.15fr;
+    gap: calc(1.5px + 0.5px * var(--focus));
+    padding: calc(3px + 1px * var(--focus));
+    border-radius: calc(18px + 10px * var(--focus));
+  }
+
+  .program-card-media,
+  .program-card-copy {
+    height: calc(
+      5.25rem + (min(15.5rem, 42svh) - 5.25rem) * var(--focus)
+    );
+    border-radius: calc(16px + 10px * var(--focus));
+  }
+
+  .program-card-copy {
+    padding: calc(8px + 4px * var(--focus));
+  }
+
+  .program-card-title {
+    font-size: calc(0.95rem + 0.55rem * var(--focus));
+  }
+
+  .program-card-summary {
+    font-size: calc(0.68rem + 0.08rem * var(--focus));
+    -webkit-line-clamp: 2;
+  }
+}

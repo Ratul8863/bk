@@ -1,0 +1,127 @@
+import type { HomepageConfig } from '@/types/content';
+
+export const homepage: HomepageConfig = {
+  id: 'homepage',
+  heroEyebrow: 'BK School of Research',
+  heroTitle: 'Shaping Evidence-Based Policy for a Changing Global Landscape',
+  heroSubtitle:
+    'Interdisciplinary research for evidence-based policy across education, public policy, and social development.',
+  heroImageUrl: '/media/prototype/bksr-hero-seminar.jpg',
+  heroCtas: [
+    { label: 'Explore Research', href: '/research', variant: 'primary' },
+    { label: 'View Publications', href: '/publications', variant: 'secondary' },
+  ],
+  directorPersonId: 'person-bezon-kumar',
+  directorMessageExcerpt:
+    'Founded in 2015 to advance research, reformation, and development with young scholars and university teachers.\n\nOur vision is to contribute to making a green, peaceful, prosperous, non-discriminating, and non-depriving world — through research on social issues, education and training, and public awareness.',
+  featuredResearchProjectIds: [
+    'project-remittances-poverty-alleviation',
+    'project-climate-perception-university-students',
+  ],
+  featuredPublicationIds: [
+    'pub-kumar-remittances-poverty-alleviation-2019',
+    'pub-kumar-climate-perception-2019',
+    'pub-islam-kumar-social-network-loneliness-2019',
+  ],
+  featuredNewsIds: [
+    'news-climate-change-bangladesh',
+    'news-remittance-effective-mechanism',
+  ],
+  featuredEventIds: [
+    'event-covid-child-protection',
+    'event-gender-development',
+    'event-covid-youth-mental-health',
+  ],
+  sections: [
+    { id: 'home-hero', type: 'hero', enabled: true, order: 1 },
+    { id: 'home-stats', type: 'stats', title: 'At a glance', enabled: true, order: 2 },
+    {
+      id: 'home-featured-research',
+      type: 'featured-research',
+      title: 'Featured research',
+      enabled: true,
+      order: 3,
+    },
+    {
+      id: 'home-featured-publications',
+      type: 'featured-publications',
+      title: 'Selected publications',
+      enabled: true,
+      order: 4,
+    },
+    {
+      id: 'home-director',
+      type: 'director-message',
+      title: 'From the Executive Director',
+      enabled: true,
+      order: 5,
+    },
+    {
+      id: 'home-areas',
+      type: 'research-areas',
+      title: 'Research areas',
+      enabled: true,
+      order: 6,
+    },
+    {
+      id: 'home-activities',
+      type: 'activities',
+      title: 'Activities',
+      enabled: true,
+      order: 7,
+    },
+    { id: 'home-news', type: 'news', title: 'News', enabled: true, order: 8 },
+    { id: 'home-events', type: 'events', title: 'Events', enabled: true, order: 9 },
+    {
+      id: 'home-cta',
+      type: 'cta',
+      title: 'Connect with BKSR',
+      enabled: true,
+      order: 10,
+      config: { href: '/contact' },
+    },
+  ],
+  stats: [
+    {
+      id: 'stat-founded',
+      label: 'Founded',
+      value: '2015',
+      verified: true,
+      note: 'Founded by Bezon Kumar in October 2015; official journey from December 2016 (About page).',
+      order: 1,
+    },
+    {
+      id: 'stat-publications',
+      label: 'Peer-reviewed publications',
+      value: '20+',
+      verified: true,
+      note: 'Stated on 2023 Job Vacancy notice: over 20 peer-reviewed journal articles and book chapters.',
+      order: 2,
+    },
+    {
+      id: 'stat-countries',
+      label: 'Countries represented',
+      value: '22',
+      verified: true,
+      note: 'Stated on 2023 Job Vacancy notice: research scholars and enumerators from 22 countries.',
+      order: 3,
+    },
+    {
+      id: 'stat-award',
+      label: 'Recognition',
+      value: 'Joy Bangla Youth Award 2022',
+      verified: true,
+      note: 'Stated on 2023 Job Vacancy notice for contribution in youth development through education and research.',
+      order: 4,
+    },
+    {
+      id: 'stat-scholars-350',
+      label: 'Research scholars & enumerators',
+      value: '350+',
+      verified: false,
+      note: 'Cited on 2023 vacancy notice; About page earlier cited ~30 scholars — treat as unverified pending confirmation.',
+      order: 5,
+    },
+  ],
+  updatedAt: '2026-08-30T00:00:00.000Z',
+};
