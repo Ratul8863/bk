@@ -33,7 +33,7 @@ export function TeamMemberCard({
   return (
     <div
       className={cn(
-        'relative aspect-[412/593] w-full [perspective:1400px]',
+        'relative aspect-[412/500] w-full [perspective:1400px] sm:aspect-[412/593]',
         className,
       )}
       onMouseEnter={() => setFlipped(true)}
@@ -49,7 +49,7 @@ export function TeamMemberCard({
         {/* Front — portrait + name / role */}
         <div
           className={cn(
-            'absolute inset-0 flex flex-col rounded-[1.75rem] bg-ink p-1.5 sm:rounded-[2.625rem] sm:p-2',
+            'absolute inset-0 flex flex-col rounded-[1.35rem] bg-ink p-1 sm:rounded-[2.625rem] sm:p-2',
             '[backface-visibility:hidden]',
             'motion-reduce:static motion-reduce:h-full',
             flipped && 'motion-reduce:hidden',
@@ -57,25 +57,25 @@ export function TeamMemberCard({
         >
           <button
             type="button"
-            className="flex h-full min-h-0 w-full flex-col gap-1.5 text-left sm:gap-2"
+            className="flex h-full min-h-0 w-full flex-col gap-1 text-left sm:gap-2"
             onClick={() => setFlipped(true)}
             aria-expanded={flipped}
             aria-label={`Show details for ${name}`}
           >
-            <div className="relative min-h-0 flex-1 overflow-hidden rounded-[1.25rem] bg-surface sm:rounded-[2rem]">
+            <div className="relative min-h-0 flex-1 overflow-hidden rounded-[1.1rem] bg-surface sm:rounded-[2rem]">
               <Image
                 src={imageSrc}
                 alt={imageAlt ?? `Portrait of ${name}`}
                 fill
-                sizes="(max-width: 640px) 100vw, (max-width: 1024px) 50vw, 25vw"
+                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 50vw, 25vw"
                 className="object-cover object-top"
               />
             </div>
-            <div className="relative shrink-0 overflow-hidden rounded-[1.25rem] bg-white px-4 pb-4 pt-4 sm:rounded-[2rem] sm:px-6 sm:pb-6 sm:pt-6">
-              <p className="font-sans text-lg leading-snug text-ink sm:text-2xl">
+            <div className="relative shrink-0 overflow-hidden rounded-[1.1rem] bg-white px-2.5 pb-2.5 pt-2.5 sm:rounded-[2rem] sm:px-6 sm:pb-6 sm:pt-6">
+              <p className="font-sans text-[0.8125rem] leading-snug text-ink sm:text-2xl">
                 {name}
               </p>
-              <p className="mt-1 font-sans text-sm font-light leading-snug text-muted sm:text-base">
+              <p className="mt-0.5 font-sans text-[0.6875rem] font-light leading-snug text-muted sm:mt-1 sm:text-base">
                 {role}
               </p>
             </div>
@@ -85,19 +85,19 @@ export function TeamMemberCard({
         {/* Back — bio paragraph + View Profile (Figma flip) */}
         <div
           className={cn(
-            'absolute inset-0 flex flex-col justify-between rounded-[1.75rem] bg-ink p-5 sm:rounded-[2.625rem] sm:p-6',
+            'absolute inset-0 flex flex-col justify-between rounded-[1.35rem] bg-ink p-3.5 sm:rounded-[2.625rem] sm:p-6',
             '[backface-visibility:hidden] [transform:rotateY(180deg)]',
             'motion-reduce:static motion-reduce:mt-0 motion-reduce:h-full motion-reduce:transform-none',
             !flipped && 'motion-reduce:hidden',
           )}
         >
-          <p className="line-clamp-[12] font-sans text-sm leading-relaxed text-paper sm:text-[0.9375rem] sm:leading-[1.55]">
+          <p className="line-clamp-[10] font-sans text-xs leading-relaxed text-paper sm:line-clamp-[12] sm:text-[0.9375rem] sm:leading-[1.55]">
             {description}
           </p>
-          <div className="flex justify-end pt-4">
+          <div className="flex justify-end pt-3 sm:pt-4">
             <Link
               href={href}
-              className="inline-flex items-center gap-1 rounded-[0.6rem] bg-white px-3 py-1.5 font-sans text-xs font-medium text-ink transition-colors hover:bg-paper sm:text-sm"
+              className="inline-flex items-center gap-1 rounded-full bg-white px-2.5 py-1 font-sans text-[0.6875rem] font-medium text-ink transition-colors hover:bg-paper sm:px-3 sm:py-1.5 sm:text-sm"
               onClick={(event) => event.stopPropagation()}
             >
               {ctaLabel}

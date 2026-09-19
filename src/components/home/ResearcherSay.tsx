@@ -1,15 +1,12 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import Image from 'next/image';
+import { ArrowLeft, ArrowRight } from 'lucide-react';
 import gsap from 'gsap';
-import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { useReducedMotion } from 'motion/react';
 import { Reveal } from '@/components/motion/Reveal';
 import { EditorialHeading } from '@/components/ui/EditorialHeading';
 import { cn } from '@/lib/utils';
-
-gsap.registerPlugin(ScrollTrigger);
 
 export type ResearcherSayItem = {
   imageSrc: string;
@@ -21,30 +18,58 @@ export type ResearcherSayItem = {
 type ResearcherSayProps = {
   items: ResearcherSayItem[];
   title: string;
-  subtitle: string;
+  subtitle?: string;
   className?: string;
 };
 
-const SCRUB = 0.4;
+const GAP_DESKTOP = 80;
+const GAP_MOBILE = 16;
+/** Closest gap while pushing — almost kisses, never stacks. */
+const MIN_GAP_PX = 22;
+/** How many cards participate in the visible push wave. */
+const WAVE_CHAIN = 3;
+const AUTOPLAY_MS = 4800;
+/** Full step duration — includes the short push-wave cascade. */
+const FLOW_TWEEN_S = 1.1;
+/** Soften the overall step so it doesn't feel robotic. */
+const FLOW_EASE = 'power1.inOut';
+const NARROW_QUERY = '(max-width: 767px)';
 
-/** Resting gap between cards (px) — Tailwind gap-24. */
-const GAP_PX = 96;
+function subscribeNarrow(onChange: () => void) {
+  const media = window.matchMedia(NARROW_QUERY);
+  media.addEventListener('change', onChange);
+  return () => media.removeEventListener('change', onChange);
+}
 
-/**
- * Max gap shrink while the rear card has moved and the next hasn’t yet.
- * Rest 96 → closest ~40. Cards never touch; motion is forward-only.
- */
-const MAX_COMPRESS = 56;
+function useIsNarrow() {
+  return useSyncExternalStore(
+    subscribeNarrow,
+    () => window.matchMedia(NARROW_QUERY).matches,
+    () => false,
+  );
+}
 
-function SectionIntro({ title, subtitle }: { title: string; subtitle: string }) {
+function SectionIntro({
+  title,
+  subtitle,
+}: {
+  title: string;
+  subtitle?: string;
+}) {
   return (
-    <Reveal className="mx-auto max-w-3xl px-4 text-center sm:px-6 lg:px-8">
-      <EditorialHeading as="h2" size="xl" className="text-balance">
+    <Reveal className="mx-auto w-full max-w-6xl px-4 text-center sm:px-6 lg:px-8">
+      <EditorialHeading
+        as="h2"
+        size="xl"
+        className="text-pretty lg:text-nowrap"
+      >
         {title}
       </EditorialHeading>
-      <p className="mt-3 text-sm leading-relaxed text-muted sm:mt-4 sm:text-lg md:text-xl">
-        {subtitle}
-      </p>
+      {subtitle ? (
+        <p className="mx-auto mt-3 max-w-5xl text-sm leading-relaxed text-muted sm:mt-4 sm:text-lg md:text-xl lg:max-w-none lg:whitespace-nowrap lg:text-lg xl:text-xl">
+          {subtitle}
+        </p>
+      ) : null}
     </Reveal>
   );
 }
@@ -55,7 +80,6 @@ function QuoteBody({ item }: { item: ResearcherSayItem }) {
       <p className="font-sans text-base leading-7 text-paper sm:text-2xl sm:leading-9">
         {item.quote}
       </p>
-
       <div className="mt-6 flex items-center gap-2.5 sm:mt-0">
         <div className="relative h-[56px] w-[48px] shrink-0 overflow-hidden rounded-[6px] bg-surface sm:h-[70px] sm:w-[60px]">
           <Image
@@ -79,27 +103,89 @@ function QuoteBody({ item }: { item: ResearcherSayItem }) {
   );
 }
 
-function TrackCards({ items }: { items: ResearcherSayItem[] }) {
+function QuoteBodyCompact({ item }: { item: ResearcherSayItem }) {
+  return (
+    <article className="flex flex-col justify-between gap-4 rounded-[1.25rem] bg-[#0b233f] p-3.5 text-paper">
+      <p className="font-sans text-sm leading-6 text-paper">{item.quote}</p>
+      <div className="flex items-center gap-2">
+        <div className="relative h-10 w-9 shrink-0 overflow-hidden rounded-[5px] bg-surface">
+          <Image
+            src={item.imageSrc}
+            alt=""
+            fill
+            sizes="36px"
+            className="object-cover grayscale"
+          />
+        </div>
+        <div className="min-w-0 text-paper">
+          <p className="font-sans text-sm font-medium leading-5">{item.name}</p>
+          <p className="mt-0.5 font-sans text-xs leading-4 text-paper/80">
+            {item.role}
+          </p>
+        </div>
+      </div>
+    </article>
+  );
+}
+
+function TrackCardsStacked({
+  items,
+  keyPrefix,
+}: {
+  items: ResearcherSayItem[];
+  keyPrefix: string;
+}) {
   return (
     <>
-      {items.flatMap((item) => [
+      {items.map((item, index) => (
         <li
-          key={`${item.imageSrc}-photo`}
+          key={`${keyPrefix}-${item.imageSrc}-stack-${index}`}
           data-inchworm-card
-          className="relative aspect-412/531 w-[min(78vw,18rem)] shrink-0 overflow-hidden rounded-[1.5rem] bg-surface will-change-transform sm:w-[min(78vw,20rem)] sm:rounded-[1.875rem]"
+          className="flex w-[min(100vw-2.5rem,17.5rem)] shrink-0 flex-col gap-2.5 will-change-transform"
+        >
+          <div className="relative aspect-[3/3.4] w-full overflow-hidden rounded-[1.25rem] bg-surface">
+            <Image
+              src={item.imageSrc}
+              alt=""
+              fill
+              sizes="(max-width: 767px) 70vw, 280px"
+              className="object-cover grayscale"
+            />
+          </div>
+          <QuoteBodyCompact item={item} />
+        </li>
+      ))}
+    </>
+  );
+}
+
+function TrackCardsDesktop({
+  items,
+  keyPrefix,
+}: {
+  items: ResearcherSayItem[];
+  keyPrefix: string;
+}) {
+  return (
+    <>
+      {items.flatMap((item, index) => [
+        <li
+          key={`${keyPrefix}-${item.imageSrc}-photo-${index}`}
+          data-inchworm-card
+          className="relative aspect-412/531 w-[min(78vw,20rem)] shrink-0 overflow-hidden rounded-[1.875rem] bg-surface will-change-transform"
         >
           <Image
             src={item.imageSrc}
             alt=""
             fill
-            sizes="(max-width: 640px) 78vw, 320px"
+            sizes="320px"
             className="object-cover grayscale"
           />
         </li>,
         <li
-          key={`${item.imageSrc}-quote`}
+          key={`${keyPrefix}-${item.imageSrc}-quote-${index}`}
           data-inchworm-card
-          className="aspect-412/531 w-[min(78vw,18rem)] shrink-0 will-change-transform sm:w-[min(78vw,20rem)]"
+          className="aspect-412/531 w-[min(78vw,20rem)] shrink-0 will-change-transform"
         >
           <QuoteBody item={item} />
         </li>,
@@ -108,10 +194,109 @@ function TrackCards({ items }: { items: ResearcherSayItem[] }) {
   );
 }
 
+function NavButton({
+  label,
+  onClick,
+  mirrored,
+}: {
+  label: string;
+  onClick: () => void;
+  mirrored?: boolean;
+}) {
+  return (
+    <button
+      type="button"
+      aria-label={label}
+      onClick={onClick}
+      className="inline-flex items-center justify-center rounded-full bg-ink p-2.5 text-paper transition-colors hover:bg-accent"
+    >
+      {mirrored ? (
+        <ArrowLeft className="size-7.5" strokeWidth={1.5} aria-hidden />
+      ) : (
+        <ArrowRight className="size-7.5" strokeWidth={1.5} aria-hidden />
+      )}
+    </button>
+  );
+}
+
+function readX(el: HTMLElement) {
+  return Number(gsap.getProperty(el, 'x')) || 0;
+}
+
+function syncClones(originals: HTMLElement[], clones: HTMLElement[]) {
+  const count = Math.min(originals.length, clones.length);
+  for (let i = 0; i < count; i += 1) {
+    gsap.set(clones[i], { x: readX(originals[i]) });
+  }
+}
+
 /**
- * Inchworm: each scroll “lane” runs a forward chain —
- * last card moves → closes on the previous → that one moves → … → front.
- * Another scroll beat repeats the same chain. Forward-only, smooth scrub.
+ * Video inchworm paint: the rightmost on-screen card leads, gap compresses,
+ * then pushes leftward through a short wave. Cards outside the wave share
+ * the wave edge (pack behind / lead ahead) — never a full-row accordion.
+ *
+ * Linear local progress ⇒ peak adjacent lead ≈ gap − minGap.
+ */
+function paintInchworm(
+  originals: HTMLElement[],
+  clones: HTMLElement[],
+  baseX: number,
+  progress: number,
+  deltaX: number,
+  gapPx: number,
+  movingLeft: boolean,
+  anchorIndex: number,
+) {
+  const n = originals.length;
+  if (!n) return;
+
+  const t = Math.min(1, Math.max(0, progress));
+  const maxLead = Math.max(8, gapPx - MIN_GAP_PX);
+  const adjLag = Math.min(0.22, Math.max(0.05, maxLead / Math.abs(deltaX || 1)));
+  const chain = Math.min(WAVE_CHAIN, n);
+  const span = 1 + (chain - 1) * adjLag;
+  const timelineT = t * span;
+  const anchor = Math.min(Math.max(anchorIndex, 0), n - 1);
+
+  for (let i = 0; i < n; i += 1) {
+    // Distance from the on-screen leading edge of the wave.
+    const distFromLeader = movingLeft
+      ? Math.max(0, anchor - i)
+      : Math.max(0, i - anchor);
+    const delay = Math.min(distFromLeader, chain - 1) * adjLag;
+    const localT = Math.min(1, Math.max(0, timelineT - delay));
+    gsap.set(originals[i], { x: baseX + deltaX * localT });
+  }
+  syncClones(originals, clones);
+}
+
+function visibleAnchorIndex(
+  originals: HTMLElement[],
+  viewport: HTMLElement | null,
+  movingLeft: boolean,
+) {
+  if (!viewport || !originals.length) {
+    return movingLeft ? originals.length - 1 : 0;
+  }
+  const vr = viewport.getBoundingClientRect();
+  if (movingLeft) {
+    for (let i = originals.length - 1; i >= 0; i -= 1) {
+      const r = originals[i].getBoundingClientRect();
+      if (r.left < vr.right - 12 && r.right > vr.left + 12) return i;
+    }
+    return originals.length - 1;
+  }
+  for (let i = 0; i < originals.length; i += 1) {
+    const r = originals[i].getBoundingClientRect();
+    if (r.left < vr.right - 12 && r.right > vr.left + 12) return i;
+  }
+  return 0;
+}
+
+/**
+ * Infinite auto inchworm + always-on manual pager (circular).
+ * Motion matches Made With GSAP inchworm: trailing card leads, gap
+ * compresses, then pushes — independent stagger, not a rigid slide.
  */
 export function ResearcherSay({
   items,
@@ -119,150 +304,279 @@ export function ResearcherSay({
   subtitle,
   className,
 }: ResearcherSayProps) {
-  const reduceMotion = useReducedMotion();
+  const isNarrow = useIsNarrow();
   const sectionRef = useRef<HTMLElement>(null);
-  const pinRef = useRef<HTMLDivElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLUListElement>(null);
 
-  useEffect(() => {
-    if (reduceMotion) return;
+  const metricsRef = useRef({
+    flowStep: 320,
+    loopWidth: 0,
+    gapPx: GAP_DESKTOP,
+  });
+  const logicalIndexRef = useRef(0);
+  const inViewRef = useRef(false);
+  const pausedRef = useRef(false);
+  const tweenRef = useRef<gsap.core.Timeline | null>(null);
 
-    const section = sectionRef.current;
-    const pin = pinRef.current;
-    const viewport = viewportRef.current;
+  const [logicalIndex, setLogicalIndex] = useState(0);
+
+  const cardsPerFlow = isNarrow ? 1 : 2;
+  const loopSteps = items.length;
+
+  const getCardSets = () => {
     const track = trackRef.current;
-    if (!section || !pin || !viewport || !track) return;
-
-    const cards = gsap.utils.toArray<HTMLElement>(
+    if (!track) {
+      return { all: [] as HTMLElement[], originals: [] as HTMLElement[], clones: [] as HTMLElement[] };
+    }
+    const all = gsap.utils.toArray<HTMLElement>(
       track.querySelectorAll('[data-inchworm-card]'),
     );
-    if (!cards.length) return;
-
-    const getTravel = () =>
-      Math.max(0, track.scrollWidth - viewport.clientWidth);
-
-    const getStep = () => {
-      const first = cards[0];
-      if (!first) return 320 + GAP_PX;
-      const styles = getComputedStyle(track);
-      const gap =
-        Number.parseFloat(styles.columnGap || styles.gap || String(GAP_PX)) ||
-        GAP_PX;
-      return first.offsetWidth + gap;
+    const half = Math.floor(all.length / 2);
+    return {
+      all,
+      originals: all.slice(0, half),
+      clones: all.slice(half),
     };
+  };
 
-    const ctx = gsap.context(() => {
-      const travel = getTravel();
-      if (travel <= 0) return;
+  const setAllX = (x: number) => {
+    const { all } = getCardSets();
+    gsap.set(all, { x });
+  };
 
-      const step = getStep();
-      const steps = Math.max(1, Math.ceil(travel / step));
-      // Next card starts after the previous has moved ~MAX_COMPRESS (forward only).
-      const chainOverlap = 1 - Math.min(0.25, MAX_COMPRESS / Math.max(step, 1));
+  const animateStep = (
+    direction: -1 | 1,
+    onSettled?: (logical: number) => void,
+  ) => {
+    const { originals, clones } = getCardSets();
+    if (!originals.length) return;
 
-      gsap.set(cards, { x: 0 });
+    const { flowStep, gapPx, loopWidth } = metricsRef.current;
+    if (flowStep <= 0) return;
 
-      const tl = gsap.timeline({
-        scrollTrigger: {
-          trigger: section,
-          pin,
-          scrub: SCRUB,
-          start: 'top top',
-          end: () => `+=${Math.max(Math.round(getTravel() * 1.3), 1)}`,
-          invalidateOnRefresh: true,
-          anticipatePin: 1,
-        },
-      });
+    tweenRef.current?.kill();
 
-      for (let beat = 1; beat <= steps; beat += 1) {
-        const beatIndex = beat;
-        const toX = () => -Math.min(beatIndex * getStep(), getTravel());
+    const from = logicalIndexRef.current;
+    let targetLogical = from + direction;
 
-        // Last → … → first: each move causes the next to follow.
-        for (let i = cards.length - 1; i >= 0; i -= 1) {
-          const isFirstInChain = i === cards.length - 1;
-          tl.to(
-            cards[i],
-            {
-              x: toX,
-              duration: 1,
-              ease: 'power1.out',
-            },
-            isFirstInChain ? undefined : `-=${chainOverlap}`,
-          );
+    // Seamless loop: when wrapping backward from 0, jump into the clone
+    // twin first so motion continues in the same visual direction.
+    if (direction === -1 && from === 0 && loopWidth > 0) {
+      const jumped = -loopWidth;
+      gsap.set(originals, { x: jumped });
+      syncClones(originals, clones);
+      targetLogical = loopSteps - 1;
+    }
+
+    const crossesIntoClone = direction === 1 && from === loopSteps - 1;
+    const movingLeft = direction === 1;
+    const baseX = readX(originals[0]);
+    // If cards aren't uniform (shouldn't happen at rest), prefer logical base.
+    const startX = originals.every((el) => Math.abs(readX(el) - baseX) < 1)
+      ? baseX
+      : -from * flowStep;
+    if (startX !== baseX) {
+      gsap.set(originals, { x: startX });
+      syncClones(originals, clones);
+    }
+
+    const deltaX = -direction * flowStep;
+    const proxy = { t: 0 };
+    const anchor = visibleAnchorIndex(originals, viewportRef.current, movingLeft);
+
+    const tl = gsap.timeline({
+      onComplete: () => {
+        if (crossesIntoClone && loopWidth > 0) {
+          targetLogical = 0;
         }
-      }
-    }, section);
 
-    const refresh = () => ScrollTrigger.refresh();
-    window.addEventListener('load', refresh);
+        const settledX = -targetLogical * flowStep;
+        gsap.set(originals, { x: settledX });
+        syncClones(originals, clones);
 
-    const images = [...track.querySelectorAll('img')];
-    images.forEach((img) => {
-      if (!img.complete) img.addEventListener('load', refresh);
+        logicalIndexRef.current = targetLogical;
+        onSettled?.(targetLogical);
+      },
     });
 
-    const ro = new ResizeObserver(refresh);
+    tl.to(proxy, {
+      t: 1,
+      duration: FLOW_TWEEN_S,
+      ease: FLOW_EASE,
+      onUpdate: () => {
+        paintInchworm(
+          originals,
+          clones,
+          startX,
+          proxy.t,
+          deltaX,
+          gapPx,
+          movingLeft,
+          anchor,
+        );
+      },
+    });
+
+    tweenRef.current = tl;
+  };
+
+  const animateStepRef = useRef(animateStep);
+  animateStepRef.current = animateStep;
+
+  useEffect(() => {
+    logicalIndexRef.current = logicalIndex;
+  }, [logicalIndex]);
+
+  useEffect(() => {
+    const section = sectionRef.current;
+    const viewport = viewportRef.current;
+    const track = trackRef.current;
+    if (!section || !viewport || !track || !items.length) return;
+
+    const measure = () => {
+      const { originals, clones, all } = getCardSets();
+      const first = originals[0];
+      if (!first) return;
+
+      const styles = getComputedStyle(track);
+      const gap =
+        Number.parseFloat(styles.columnGap || styles.gap || String(GAP_DESKTOP)) ||
+        (isNarrow ? GAP_MOBILE : GAP_DESKTOP);
+      const pitch = first.offsetWidth + gap;
+      const flowStep = pitch * cardsPerFlow;
+      const loopWidth =
+        clones[0] && originals[0]
+          ? clones[0].offsetLeft - originals[0].offsetLeft
+          : pitch * originals.length;
+
+      metricsRef.current = {
+        flowStep,
+        loopWidth,
+        gapPx: gap,
+      };
+
+      // Never stomp mid-inchworm — ResizeObserver fires often during tweens.
+      if (tweenRef.current?.isActive()) return;
+
+      const logical = ((logicalIndexRef.current % loopSteps) + loopSteps) % loopSteps;
+      logicalIndexRef.current = logical;
+      setLogicalIndex(logical);
+      gsap.set(all, { x: -logical * flowStep });
+    };
+
+    logicalIndexRef.current = 0;
+    setLogicalIndex(0);
+    setAllX(0);
+    measure();
+
+    const io = new IntersectionObserver(
+      ([entry]) => {
+        inViewRef.current = Boolean(entry?.isIntersecting);
+      },
+      { threshold: 0.25 },
+    );
+    io.observe(section);
+
+    window.addEventListener('load', measure);
+    const images = [...track.querySelectorAll('img')];
+    images.forEach((img) => {
+      if (!img.complete) img.addEventListener('load', measure);
+    });
+    const ro = new ResizeObserver(measure);
     ro.observe(viewport);
     ro.observe(track);
-
-    const readyTimer = window.setTimeout(refresh, 120);
+    const readyTimer = window.setTimeout(measure, 120);
 
     return () => {
       window.clearTimeout(readyTimer);
-      window.removeEventListener('load', refresh);
-      images.forEach((img) => img.removeEventListener('load', refresh));
+      window.removeEventListener('load', measure);
+      images.forEach((img) => img.removeEventListener('load', measure));
       ro.disconnect();
-      ctx.revert();
+      io.disconnect();
+      tweenRef.current?.kill();
     };
-  }, [items.length, reduceMotion]);
+  }, [items.length, isNarrow, cardsPerFlow, loopSteps]);
+
+  useEffect(() => {
+    if (loopSteps <= 1) return;
+
+    const id = window.setInterval(() => {
+      if (pausedRef.current || !inViewRef.current) return;
+      if (tweenRef.current?.isActive()) return;
+
+      animateStepRef.current(1, (logical) => {
+        setLogicalIndex(logical);
+      });
+    }, AUTOPLAY_MS);
+
+    return () => window.clearInterval(id);
+  }, [loopSteps]);
+
+  const go = (direction: -1 | 1) => {
+    if (tweenRef.current?.isActive() || loopSteps <= 1) return;
+    animateStepRef.current(direction, (logical) => setLogicalIndex(logical));
+  };
 
   if (!items.length) return null;
-
-  if (reduceMotion) {
-    return (
-      <section
-        className={cn(
-          'border-t border-border bg-white py-16 md:py-24',
-          className,
-        )}
-      >
-        <SectionIntro title={title} subtitle={subtitle} />
-        <div
-          data-lenis-prevent
-          className="mt-10 overflow-x-auto px-4 sm:mt-14 sm:px-6 md:mt-16 lg:px-8 xl:px-16 2xl:px-[100px]"
-        >
-          <ul className="mx-auto flex w-max flex-nowrap gap-8 pb-2 sm:gap-16 md:gap-24">
-            <TrackCards items={items} />
-          </ul>
-        </div>
-      </section>
-    );
-  }
 
   return (
     <section
       ref={sectionRef}
-      className={cn('relative overflow-x-clip border-t border-border bg-white', className)}
+      className={cn(
+        'relative overflow-x-clip border-t border-border bg-white py-12 sm:py-16 md:py-24',
+        className,
+      )}
+      onMouseEnter={() => {
+        pausedRef.current = true;
+      }}
+      onMouseLeave={() => {
+        pausedRef.current = false;
+      }}
     >
-      <div
-        ref={pinRef}
-        className="flex min-h-svh flex-col justify-center overflow-hidden py-12 sm:py-16 md:py-24"
-      >
-        <SectionIntro title={title} subtitle={subtitle} />
+      <SectionIntro title={title} subtitle={subtitle} />
 
-        <div
-          ref={viewportRef}
-          className="relative mt-8 w-full overflow-hidden sm:mt-14 md:mt-16"
+      <div
+        ref={viewportRef}
+        data-researcher-viewport
+        className="relative mt-8 w-full overflow-hidden sm:mt-14 md:mt-16"
+      >
+        <ul
+          ref={trackRef}
+          className={cn(
+            'flex w-max flex-nowrap',
+            isNarrow
+              ? 'gap-4 px-4'
+              : 'gap-6 px-4 sm:gap-12 sm:px-6 md:gap-20 lg:px-8 xl:px-16 2xl:px-[100px]',
+          )}
         >
-          <ul
-            ref={trackRef}
-            className="flex w-max flex-nowrap gap-8 px-4 sm:gap-16 sm:px-6 md:gap-24 lg:px-8 xl:px-16 2xl:px-[100px]"
-          >
-            <TrackCards items={items} />
-          </ul>
-        </div>
+          {isNarrow ? (
+            <>
+              <TrackCardsStacked items={items} keyPrefix="a" />
+              <TrackCardsStacked items={items} keyPrefix="b" />
+            </>
+          ) : (
+            <>
+              <TrackCardsDesktop items={items} keyPrefix="a" />
+              <TrackCardsDesktop items={items} keyPrefix="b" />
+            </>
+          )}
+        </ul>
+      </div>
+
+      <div
+        data-researcher-nav
+        className="mt-8 flex items-center justify-center gap-5 sm:mt-10 sm:gap-6"
+      >
+        <NavButton
+          label="Previous researcher statements"
+          onClick={() => go(-1)}
+          mirrored
+        />
+        <NavButton
+          label="Next researcher statements"
+          onClick={() => go(1)}
+        />
       </div>
     </section>
   );

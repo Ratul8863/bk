@@ -4,6 +4,7 @@ import { Container } from '@/components/ui/Container';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { Section } from '@/components/ui/Section';
 import { PublicationFilters } from '@/components/public/PublicationFilters';
+import { pageHeroMedia } from '@/lib/content/page-heroes';
 import {
   getPublications,
   getResearchAreas,
@@ -30,7 +31,7 @@ export function publicationTypeMetadata(
 }
 
 /** Locked-type publication library page used by diagram-aligned routes. */
-export function PublicationTypePage({
+export async function PublicationTypePage({
   type,
   title,
   description,
@@ -38,7 +39,7 @@ export function PublicationTypePage({
   emptyDescription,
   path,
 }: Props) {
-  const publications = getPublications().filter((item) => item.type === type);
+  const publications = (await getPublications()).filter((item) => item.type === type);
   const label = PUBLICATION_TYPE_LABELS[type];
 
   return (
@@ -47,6 +48,7 @@ export function PublicationTypePage({
         eyebrow="Library"
         title={title}
         description={description}
+        imageSrc={pageHeroMedia.publications}
         breadcrumbs={[
           { label: 'Home', href: '/' },
           { label: 'Publications', href: '/publications' },
@@ -56,35 +58,43 @@ export function PublicationTypePage({
           <>
             <ArrowLink href="/publications">All publications</ArrowLink>
             <ArrowLink href="/publications/journals">Journals</ArrowLink>
+            <ArrowLink href="/publications/blogs">Blogs</ArrowLink>
           </>
         }
       />
-      <Section>
+      <Section tone="white">
         <Container>
           {publications.length ? (
             <PublicationFilters
-              publications={getPublications()}
-              areas={getResearchAreas()}
+              publications={await getPublications()}
+              areas={await getResearchAreas()}
               initialType={type}
               lockType
             />
           ) : (
-            <>
-              <EmptyState title={emptyTitle} description={emptyDescription} />
-              <div className="mt-10 flex flex-wrap gap-6">
-                <ArrowLink href="/publications">Browse all publications</ArrowLink>
-                <ArrowLink href="/publications/journals">
-                  Journal articles
-                </ArrowLink>
-                <ArrowLink href="/publications/blogs">Blogs</ArrowLink>
-              </div>
-              <p className="mt-8 text-sm text-muted">
-                CMS type ready: <span className="text-ink">{label}</span>. Items
-                appear here when published.
-              </p>
-              <p className="sr-only">{path}</p>
-            </>
+            <EmptyState
+              title={emptyTitle}
+              description={emptyDescription}
+              action={
+                <>
+                  <ArrowLink href="/publications">
+                    Browse all publications
+                  </ArrowLink>
+                  <ArrowLink href="/publications/journals">
+                    Journal articles
+                  </ArrowLink>
+                  <ArrowLink href="/news">News &amp; essays</ArrowLink>
+                </>
+              }
+            />
           )}
+          {!publications.length ? (
+            <p className="mt-8 text-center text-sm text-muted">
+              CMS type ready: <span className="text-ink">{label}</span>. Items
+              appear here when published.
+              <span className="sr-only">{path}</span>
+            </p>
+          ) : null}
         </Container>
       </Section>
     </>

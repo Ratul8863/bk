@@ -68,9 +68,9 @@ function TeamSection({
           {members.length} {members.length === 1 ? 'profile' : 'profiles'}
         </p>
       </Reveal>
-      <ul className="mt-10 grid w-full gap-5 sm:mt-12 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
+      <ul className="mt-10 grid w-full grid-cols-2 gap-3 sm:mt-12 sm:gap-6 lg:grid-cols-3 xl:grid-cols-4">
         {members.map((member, index) => (
-          <li key={member.id}>
+          <li key={member.id} className="min-w-0">
             <Reveal delay={Math.min(index * 0.04, 0.12)}>
               <TeamMemberCard
                 href={member.href}

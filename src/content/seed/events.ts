@@ -248,4 +248,42 @@ The webinar was held over the **ZOOM** application with **YouTube live streaming
       canonicalPath: '/events/spss-for-beginners',
     },
   },
+  {
+    id: 'event-research-methods-workshop-2026',
+    slug: 'research-methods-workshop-2026',
+    status: 'published',
+    createdAt: '2026-09-01T00:00:00.000Z',
+    updatedAt: '2026-09-13T00:00:00.000Z',
+    publishedAt: '2026-09-01T00:00:00.000Z',
+    title: 'Research Methods Workshop 2026',
+    summary:
+      'A hands-on workshop on research design, evidence, and academic writing for early-career scholars — registration open.',
+    description: `BK School of Research invites early-career researchers to a practical workshop on **research methods**, evidence use, and clear academic writing.
+
+## Who should attend
+- Graduate students and early-career researchers
+- Practitioners preparing evidence briefs
+
+## Format
+Online session with interactive exercises and Q&A.
+
+## Registration
+Use the in-site registration form linked from this page. Places are limited.`,
+    eventStatus: 'upcoming',
+    startAt: '2026-10-18T16:00:00+06:00',
+    endAt: '2026-10-18T18:00:00+06:00',
+    location: 'Online (BK School of Research)',
+    isOnline: true,
+    speakers: ['Bezon Kumar'],
+    registrationUrl: null,
+    registrationFormId: 'form-research-methods-workshop-2026',
+    recordingUrl: null,
+    featuredImageUrl: '/media/authentic/event-covid-child-protection.jpg',
+    seo: {
+      title: 'Research Methods Workshop 2026 | BKSR',
+      description:
+        'Hands-on research methods workshop for early-career scholars. Registration open.',
+      canonicalPath: '/events/research-methods-workshop-2026',
+    },
+  },
 ];

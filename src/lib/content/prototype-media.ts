@@ -99,23 +99,53 @@ export const prototypeMedia = {
   },
   collabPsychology: {
     id: 'media-proto-collab-psychology',
-    url: '/media/prototype/collab-psychology.png',
-    alt: 'Prototype visual for a psychology research collaboration slot',
+    url: '/media/prototype/collab-logo-psychology.png',
+    alt: 'Prototype institution mark for a psychology collaboration slot',
   },
   collabEconomics: {
     id: 'media-proto-collab-economics',
-    url: '/media/prototype/collab-economics.png',
-    alt: 'Prototype visual for an economics research collaboration slot',
+    url: '/media/prototype/collab-logo-economics.png',
+    alt: 'Prototype institution mark for an economics collaboration slot',
   },
   collabComputerScience: {
     id: 'media-proto-collab-computer-science',
-    url: '/media/prototype/collab-computer-science.png',
-    alt: 'Prototype visual for a computer science research collaboration slot',
+    url: '/media/prototype/collab-logo-cs.png',
+    alt: 'Prototype institution mark for a computer science collaboration slot',
+  },
+  mediaNewspaperDesk: {
+    id: 'media-proto-media-newspaper-desk',
+    url: '/media/prototype/bksr-media-newspaper-desk.png',
+    alt: 'Prototype newspaper desk still for BKSR in media',
+  },
+  mediaDigitalNews: {
+    id: 'media-proto-media-digital-news',
+    url: '/media/prototype/bksr-media-digital-news.png',
+    alt: 'Prototype digital news reading still for BKSR in media',
+  },
+  mediaBroadcast: {
+    id: 'media-proto-media-broadcast',
+    url: '/media/prototype/bksr-media-broadcast.png',
+    alt: 'Prototype broadcast studio still for BKSR in media',
+  },
+  mediaClippings: {
+    id: 'media-proto-media-clippings',
+    url: '/media/prototype/bksr-media-clippings.png',
+    alt: 'Prototype press-clipping still for BKSR in media',
+  },
+  mediaBroadsheet: {
+    id: 'media-proto-media-broadsheet',
+    url: '/media/prototype/bksr-media-broadsheet.png',
+    alt: 'Prototype broadsheet reading still for BKSR in media',
+  },
+  mediaSpotlight: {
+    id: 'media-proto-media-spotlight',
+    url: '/media/prototype/bksr-media-spotlight.png',
+    alt: 'Prototype featured press-clipping cover for BKSR in media',
   },
   collabEnvironmental: {
     id: 'media-proto-collab-environmental',
-    url: '/media/prototype/collab-environmental.png',
-    alt: 'Prototype visual for an environmental research collaboration slot',
+    url: '/media/prototype/collab-logo-env.png',
+    alt: 'Prototype institution mark for an environmental collaboration slot',
   },
 } as const;
 
@@ -151,10 +181,77 @@ export const publicationCoverById: Record<string, string> = {
     prototypeMedia.publicationCoverRemittances.url,
 };
 
+/** Atmosphere visuals for newspaper / media appearances (prototype only). */
+export const mediaAppearanceVisualById: Record<string, string> = {
+  'pub-kumar-varendra-university-asian-age-2019':
+    prototypeMedia.mediaNewspaperDesk.url,
+  'pub-kumar-probashi-aay-alokito-vor-2018':
+    prototypeMedia.mediaBroadsheet.url,
+  'pub-kumar-factors-remittance-inflows-2018':
+    prototypeMedia.mediaDigitalNews.url,
+  'pub-kumar-nordhaus-romer-nobel-2018': prototypeMedia.mediaClippings.url,
+  'pub-kumar-international-remittances-development-2018':
+    prototypeMedia.mediaBroadcast.url,
+  'pub-kumar-nobel-2017-asian-age': prototypeMedia.mediaNewspaperDesk.url,
+  'pub-kumar-bangabandhu-7-march-asian-age-2017':
+    prototypeMedia.mediaBroadsheet.url,
+  'pub-kumar-climate-bangladesh-asian-age-2017':
+    prototypeMedia.mediaDigitalNews.url,
+  'pub-kumar-remittance-mechanism-asian-age-2017':
+    prototypeMedia.mediaClippings.url,
+};
+
+export const mediaAppearanceFallbacks = [
+  prototypeMedia.mediaNewspaperDesk.url,
+  prototypeMedia.mediaDigitalNews.url,
+  prototypeMedia.mediaBroadcast.url,
+  prototypeMedia.mediaClippings.url,
+  prototypeMedia.mediaBroadsheet.url,
+] as const;
+
 export function getPublicationCoverUrl(
   publication: { id: string; coverImageUrl?: string | null },
 ): string | null {
   return (
     publication.coverImageUrl ?? publicationCoverById[publication.id] ?? null
+  );
+}
+
+export function getMediaAppearanceVisualUrl(
+  publication: { id: string; coverImageUrl?: string | null },
+  fallbackIndex = 0,
+): string {
+  return (
+    publication.coverImageUrl ??
+    mediaAppearanceVisualById[publication.id] ??
+    mediaAppearanceFallbacks[
+      fallbackIndex % mediaAppearanceFallbacks.length
+    ] ??
+    prototypeMedia.mediaNewspaperDesk.url
+  );
+}
+
+/** Atmosphere visuals for research project cards when no featured image exists. */
+export const researchProjectVisualFallbacks = [
+  prototypeMedia.researchField.url,
+  prototypeMedia.heroSlideField.url,
+  prototypeMedia.knowledgeArchive.url,
+  prototypeMedia.heroSlideArchive.url,
+  prototypeMedia.activityWorkshop.url,
+  prototypeMedia.eventSeminar.url,
+  prototypeMedia.heroSlideSeminar.url,
+  prototypeMedia.heroSlideWebinar.url,
+] as const;
+
+export function getResearchProjectVisualUrl(
+  project: { featuredImageUrl?: string | null },
+  fallbackIndex = 0,
+): string {
+  return (
+    project.featuredImageUrl ??
+    researchProjectVisualFallbacks[
+      fallbackIndex % researchProjectVisualFallbacks.length
+    ] ??
+    prototypeMedia.researchField.url
   );
 }

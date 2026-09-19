@@ -1,5 +1,9 @@
 import Image, { type ImageProps } from 'next/image';
 import { cn } from '@/lib/utils';
+import {
+  cloudinaryImageLoader,
+  isCloudinaryUrl,
+} from '@/lib/media/cloudinary-url';
 
 type Aspect = 'square' | 'video' | 'portrait' | 'wide' | 'auto';
 
@@ -38,6 +42,9 @@ export function ImageFrame({
   framed = false,
 }: ImageFrameProps) {
   const fill = aspect !== 'auto';
+  const srcString = typeof src === 'string' ? src : null;
+  const useCloudinary =
+    Boolean(srcString) && isCloudinaryUrl(srcString as string);
 
   return (
     <div
@@ -54,6 +61,9 @@ export function ImageFrame({
         alt={alt}
         priority={priority}
         sizes={sizes}
+        {...(useCloudinary
+          ? { loader: cloudinaryImageLoader, unoptimized: false }
+          : {})}
         {...(fill
           ? { fill: true as const }
           : { width: width ?? 1200, height: height ?? 800 })}

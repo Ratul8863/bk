@@ -1,16 +1,43 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight, BookOpen } from 'lucide-react';
+import { MediaImage } from '@/components/media/MediaImage';
 import { Button } from '@/components/ui/Button';
 import { Container } from '@/components/ui/Container';
 import { EditorialHeading } from '@/components/ui/EditorialHeading';
 import { RichText } from '@/components/ui/RichText';
 import { cn } from '@/lib/utils';
+import {
+  groupInvolvements,
+  humanizeLinkRole,
+  type ResolvedPersonInvolvement,
+} from '@/lib/content/person-links';
 
 export type PersonProfileResearchItem = {
   title: string;
   summary?: string;
   href?: string;
+};
+
+export type PersonRoleHistoryItem = {
+  id: string;
+  year: string;
+  role: string;
+};
+
+export type PersonVerifiedAchievementItem = {
+  id: string;
+  title: string;
+  description?: string;
+  certificateCode?: string | null;
+  assignedAt?: string;
+};
+
+export type PersonMemberAchievementItem = {
+  id: string;
+  title: string;
+  description?: string;
+  year?: string;
 };
 
 export type PersonProfileData = {
@@ -23,6 +50,12 @@ export type PersonProfileData = {
   shortBio?: string | null;
   skills?: string[];
   researchItems?: PersonProfileResearchItem[];
+  involvements?: ResolvedPersonInvolvement[];
+  roleHistory?: PersonRoleHistoryItem[];
+  verifiedAchievements?: PersonVerifiedAchievementItem[];
+  memberAchievements?: PersonMemberAchievementItem[];
+  verificationCode?: string | null;
+  appointmentYear?: string | null;
   backHref?: string;
   backLabel?: string;
 };
@@ -78,6 +111,10 @@ export function PersonProfile({ person, related, className }: PersonProfileProps
   const backLabel = person.backLabel ?? 'Back to team';
   const skills = person.skills?.filter(Boolean) ?? [];
   const researchItems = person.researchItems?.filter((item) => item.title) ?? [];
+  const involvementGroups = groupInvolvements(person.involvements ?? []);
+  const roleHistory = person.roleHistory ?? [];
+  const verifiedAchievements = person.verifiedAchievements ?? [];
+  const memberAchievements = person.memberAchievements ?? [];
   const headline = person.shortBio?.trim();
 
   return (
@@ -113,7 +150,7 @@ export function PersonProfile({ person, related, className }: PersonProfileProps
               <div className="w-[9.5rem] shrink-0 overflow-hidden rounded-[1.5rem] bg-ink p-1.5 ring-4 ring-white sm:w-[12rem] sm:rounded-[1.85rem] sm:p-2">
                 <div className="relative aspect-[4/5] overflow-hidden rounded-[1.15rem] bg-surface sm:rounded-[1.45rem]">
                   {person.photoUrl ? (
-                    <Image
+                    <MediaImage
                       src={person.photoUrl}
                       alt={`Portrait of ${person.name}`}
                       fill
@@ -190,7 +227,156 @@ export function PersonProfile({ person, related, className }: PersonProfileProps
               />
             </ProfileCard>
 
-            {researchItems.length ? (
+            {involvementGroups.map((group) => (
+              <ProfileCard
+                key={group.type}
+                title={group.label}
+                action={
+                  <span className="font-sans text-xs text-muted">
+                    {group.items.length}{' '}
+                    {group.items.length === 1 ? 'item' : 'items'}
+                  </span>
+                }
+              >
+                <ul className="space-y-3">
+                  {group.items.map((item) => {
+                    const inner = (
+                      <>
+                        <div className="flex size-11 shrink-0 items-center justify-center rounded-[0.95rem] bg-ink text-paper">
+                          <BookOpen className="size-4" strokeWidth={1.75} aria-hidden />
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.12em] text-muted">
+                            {humanizeLinkRole(item.role)}
+                          </p>
+                          <p className="mt-0.5 font-sans text-[0.95rem] font-semibold leading-snug text-ink sm:text-base">
+                            {item.title}
+                          </p>
+                          {item.summary ? (
+                            <p className="mt-1.5 line-clamp-2 text-sm leading-relaxed text-muted">
+                              {clipSummary(item.summary, 160)}
+                            </p>
+                          ) : null}
+                        </div>
+                        {item.href ? (
+                          <ArrowRight
+                            className="mt-1 size-4 shrink-0 text-muted transition-transform group-hover:translate-x-0.5 group-hover:text-ink"
+                            aria-hidden
+                          />
+                        ) : null}
+                      </>
+                    );
+
+                    return (
+                      <li key={item.linkId}>
+                        {item.href ? (
+                          <Link
+                            href={item.href}
+                            className="group flex items-start gap-3.5 rounded-[1.25rem] border border-border/90 bg-surface-subtle/70 p-3.5 transition-[border-color,background-color,box-shadow] hover:border-ink/20 hover:bg-white hover:shadow-[0_14px_30px_-24px_rgba(13,39,69,0.4)] sm:gap-4 sm:p-4"
+                          >
+                            {inner}
+                          </Link>
+                        ) : (
+                          <div className="flex items-start gap-3.5 rounded-[1.25rem] border border-border/90 bg-surface-subtle/70 p-3.5 sm:gap-4 sm:p-4">
+                            {inner}
+                          </div>
+                        )}
+                      </li>
+                    );
+                  })}
+                </ul>
+              </ProfileCard>
+            ))}
+
+            {roleHistory.length ? (
+              <ProfileCard title="Role history">
+                <ol className="space-y-3">
+                  {roleHistory.map((row) => (
+                    <li
+                      key={row.id}
+                      className="flex items-start justify-between gap-4 rounded-[1.15rem] border border-border/90 bg-surface-subtle/70 px-4 py-3"
+                    >
+                      <div>
+                        <p className="font-sans text-[0.95rem] font-semibold text-ink">
+                          {row.role}
+                        </p>
+                        <p className="mt-0.5 text-sm text-muted">{row.year}</p>
+                      </div>
+                    </li>
+                  ))}
+                </ol>
+              </ProfileCard>
+            ) : null}
+
+            {verifiedAchievements.length || memberAchievements.length ? (
+              <ProfileCard title="Achievements">
+                <div className="space-y-5">
+                  {verifiedAchievements.length ? (
+                    <div>
+                      <p className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">
+                        Verified by BKSR
+                      </p>
+                      <ul className="mt-3 space-y-3">
+                        {verifiedAchievements.map((item) => (
+                          <li
+                            key={item.id}
+                            className="rounded-[1.15rem] border border-border/90 bg-surface-subtle/70 px-4 py-3"
+                          >
+                            <p className="font-sans text-[0.95rem] font-semibold text-ink">
+                              {item.title}
+                            </p>
+                            {item.description ? (
+                              <p className="mt-1 text-sm leading-relaxed text-muted">
+                                {item.description}
+                              </p>
+                            ) : null}
+                            {item.certificateCode ? (
+                              <Link
+                                href={`/verify/${encodeURIComponent(item.certificateCode)}`}
+                                className="mt-2 inline-block font-mono text-xs text-accent hover:underline"
+                              >
+                                {item.certificateCode}
+                              </Link>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                  {memberAchievements.length ? (
+                    <div>
+                      <p className="font-sans text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">
+                        Member-added
+                      </p>
+                      <ul className="mt-3 space-y-3">
+                        {memberAchievements.map((item) => (
+                          <li
+                            key={item.id}
+                            className="rounded-[1.15rem] border border-border/90 bg-surface-subtle/70 px-4 py-3"
+                          >
+                            <p className="font-sans text-[0.95rem] font-semibold text-ink">
+                              {item.title}
+                              {item.year ? (
+                                <span className="ml-2 text-sm font-normal text-muted">
+                                  ({item.year})
+                                </span>
+                              ) : null}
+                            </p>
+                            {item.description ? (
+                              <p className="mt-1 text-sm leading-relaxed text-muted">
+                                {item.description}
+                              </p>
+                            ) : null}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  ) : null}
+                </div>
+              </ProfileCard>
+            ) : null}
+
+            {!involvementGroups.length && researchItems.length ? (
               <ProfileCard
                 title="Research"
                 action={
@@ -271,6 +457,16 @@ export function PersonProfile({ person, related, className }: PersonProfileProps
                   </dt>
                   <dd className="text-[0.95rem] leading-snug text-ink">{person.role}</dd>
                 </div>
+                {person.appointmentYear ? (
+                  <div className="flex flex-col gap-1 py-4">
+                    <dt className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">
+                      Appointment year
+                    </dt>
+                    <dd className="text-[0.95rem] leading-snug text-ink">
+                      {person.appointmentYear}
+                    </dd>
+                  </div>
+                ) : null}
                 {person.categoryLabel ? (
                   <div className="flex flex-col gap-1 py-4">
                     <dt className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">
@@ -282,12 +478,27 @@ export function PersonProfile({ person, related, className }: PersonProfileProps
                   </div>
                 ) : null}
                 {person.affiliation ? (
-                  <div className="flex flex-col gap-1 pt-4">
+                  <div className="flex flex-col gap-1 py-4">
                     <dt className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">
                       Affiliation
                     </dt>
                     <dd className="text-[0.95rem] leading-relaxed text-ink">
                       {person.affiliation}
+                    </dd>
+                  </div>
+                ) : null}
+                {person.verificationCode ? (
+                  <div className="flex flex-col gap-1 pt-4">
+                    <dt className="text-[0.7rem] font-semibold uppercase tracking-[0.14em] text-muted">
+                      Verification code
+                    </dt>
+                    <dd>
+                      <Link
+                        href={`/verify/${encodeURIComponent(person.verificationCode)}`}
+                        className="font-mono text-[0.95rem] text-accent hover:underline"
+                      >
+                        {person.verificationCode}
+                      </Link>
                     </dd>
                   </div>
                 ) : null}

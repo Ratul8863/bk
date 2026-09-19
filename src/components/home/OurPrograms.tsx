@@ -2,8 +2,8 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import { useReducedMotion } from 'motion/react';
+import { useEffect, useRef } from 'react';
+import { useSimplifiedMotion } from '@/hooks/useSimplifiedMotion';
 import { Container } from '@/components/ui/Container';
 import { cn } from '@/lib/utils';
 import './our-programs.css';
@@ -82,35 +82,21 @@ function layoutForDelta(delta: number, step = 290) {
 
 /**
  * Figma 175:90 — vertical program wheel + right title block.
+ * On narrow screens: static stacked cards (pin/wheel fights touch scroll).
  */
 export function OurPrograms({ items, className }: OurProgramsProps) {
-  const reduceMotion = useReducedMotion();
+  const simplified = useSimplifiedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
 
   const count = items.length;
-  const [pinExtra, setPinExtra] = useState(() =>
-    Math.max(Math.round(count * SCROLL_PER_ITEM * 700), Math.round(count * 420)),
+  const pinExtra = Math.max(
+    Math.round(count * SCROLL_PER_ITEM * 700),
+    Math.round(count * 420),
   );
 
   useEffect(() => {
-    const media = window.matchMedia('(max-width: 639px)');
-    const sync = () => {
-      const mobile = media.matches;
-      setPinExtra(
-        Math.max(
-          Math.round(count * SCROLL_PER_ITEM * (mobile ? 520 : 700)),
-          Math.round(count * (mobile ? 320 : 420)),
-        ),
-      );
-    };
-    sync();
-    media.addEventListener('change', sync);
-    return () => media.removeEventListener('change', sync);
-  }, [count]);
-
-  useEffect(() => {
-    if (reduceMotion || count < 2) return;
+    if (simplified || count < 2) return;
 
     const section = sectionRef.current;
     if (!section) return;
@@ -121,13 +107,12 @@ export function OurPrograms({ items, className }: OurProgramsProps) {
     let current = 0;
     let running = false;
     let scrollable = 0;
-    let step = window.matchMedia('(max-width: 639px)').matches ? 210 : 290;
+    const step = 290;
     const wasInteractive: boolean[] = Array.from({ length: count }, () => false);
     const wasVisible: boolean[] = Array.from({ length: count }, () => true);
 
     const measure = () => {
       scrollable = Math.max(section.offsetHeight - window.innerHeight, 0);
-      step = window.matchMedia('(max-width: 639px)').matches ? 210 : 290;
     };
 
     const apply = (position: number) => {
@@ -218,19 +203,22 @@ export function OurPrograms({ items, className }: OurProgramsProps) {
       window.removeEventListener('scroll', kick);
       window.removeEventListener('resize', onResize);
     };
-  }, [count, reduceMotion]);
+  }, [count, simplified]);
 
   if (!count) return null;
 
-  if (reduceMotion) {
+  if (simplified) {
     return (
       <section
-        className={cn('border-t border-border bg-white py-16 md:py-24', className)}
+        className={cn(
+          'border-t border-border bg-white py-12 sm:py-16 md:py-24',
+          className,
+        )}
       >
         <Container>
-          <div className="grid gap-12 lg:grid-cols-2 lg:gap-16">
+          <div className="grid gap-8 sm:gap-12 lg:grid-cols-2 lg:gap-16">
             <ProgramsCopy />
-            <ul className="space-y-5">
+            <ul className="mx-auto w-full max-w-lg space-y-4 sm:max-w-none sm:space-y-5">
               {items.map((item) => (
                 <li
                   key={item.href}
@@ -253,7 +241,7 @@ export function OurPrograms({ items, className }: OurProgramsProps) {
       style={{ height: `calc(100svh + ${pinExtra}px)` }}
     >
       <div className="sticky top-0 flex min-h-svh items-center overflow-x-clip overflow-y-hidden">
-        <Container className="grid w-full min-w-0 items-center gap-6 py-8 sm:gap-8 sm:py-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(17rem,1.05fr)] lg:gap-8 xl:gap-12">
+        <Container className="grid w-full min-w-0 items-center gap-6 py-8 sm:gap-8 sm:py-10 lg:grid-cols-[minmax(0,1.25fr)_minmax(16rem,0.75fr)] lg:gap-8 xl:grid-cols-[minmax(0,1.3fr)_minmax(18rem,0.7fr)] xl:gap-10">
           <div className="relative order-last w-full min-w-0 overflow-hidden lg:order-first">
             <div
               className="pointer-events-none absolute inset-x-0 top-0 z-30 h-12 bg-linear-to-b from-white to-transparent sm:h-24"
@@ -264,7 +252,7 @@ export function OurPrograms({ items, className }: OurProgramsProps) {
               aria-hidden
             />
 
-            <div className="relative mx-auto h-[min(72svh,40rem)] w-full max-w-[34.5rem] sm:h-[min(86svh,52rem)]">
+            <div className="relative mx-auto h-[min(72svh,40rem)] w-full max-w-[38rem] sm:h-[min(86svh,52rem)] xl:max-w-[42rem]">
               {items.map((item, index) => (
                 <div
                   key={item.href}
@@ -272,7 +260,7 @@ export function OurPrograms({ items, className }: OurProgramsProps) {
                     cardRefs.current[index] = node;
                   }}
                   className={cn(
-                    'program-wheel-card absolute top-1/2 left-1/2 w-[min(100%,22rem)] sm:w-full',
+                    'program-wheel-card absolute top-1/2 left-1/2 w-full',
                     index === 0 && 'is-interactive',
                   )}
                   style={{
@@ -300,14 +288,16 @@ function ProgramsCopy() {
   return (
     <div className="mx-auto max-w-lg lg:mx-0 lg:max-w-none">
       <h2 className="font-display font-normal leading-[0.88] tracking-normal text-ink">
-        <span className="block text-[clamp(3.25rem,18vw,13.875rem)]">Our</span>
-        <span className="mt-1 block text-[clamp(2rem,10vw,6rem)]">
+        <span className="block text-[clamp(3.25rem,12vw,10rem)] lg:text-[clamp(4rem,8vw,11rem)]">
+          Our
+        </span>
+        <span className="mt-1 block text-[clamp(2rem,8vw,5rem)] lg:text-[clamp(2.5rem,4.5vw,5.25rem)]">
           Programs
         </span>
       </h2>
-      <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-ink/80 sm:mt-5 sm:text-base lg:mx-0 lg:mt-4 lg:max-w-80">
-        Training, campaigns, talks, and showcasing that extend BKSR research into
-        public practice.
+      <p className="mx-auto mt-4 max-w-sm text-sm leading-relaxed text-ink/80 sm:mt-5 sm:text-base lg:mx-0 lg:mt-4 lg:max-w-72">
+        Empowering researchers, engaging policymakers, and impacting
+        communities.
       </p>
     </div>
   );
@@ -322,7 +312,7 @@ function ProgramCard({ item }: { item: OurProgramItem }) {
           src={item.imageSrc}
           alt=""
           fill
-          sizes="17rem"
+          sizes="(max-width: 1024px) 50vw, 22rem"
           className="object-cover"
           draggable={false}
         />

@@ -6,6 +6,7 @@ import {
   Newsreader,
 } from "next/font/google";
 import { SmoothScroll } from "@/components/layout/SmoothScroll";
+import { AuthProvider } from "@/components/auth/AuthProvider";
 import { buildMetadata } from "@/lib/seo/metadata";
 import { siteSettings } from "@/content/seed/site-settings";
 import "./globals.css";
@@ -49,7 +50,9 @@ export default function RootLayout({
       className={`${newsreader.variable} ${manrope.variable} ${instrumentSans.variable} ${adlamDisplay.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-paper font-sans text-body">
-        <SmoothScroll>{children}</SmoothScroll>
+        <AuthProvider>
+          <SmoothScroll>{children}</SmoothScroll>
+        </AuthProvider>
       </body>
     </html>
   );

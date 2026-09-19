@@ -4,31 +4,38 @@ import {
   ArticleReading,
   EventAside,
 } from '@/components/editorial/ArticleReading';
-import { getEventBySlug, getEvents } from '@/lib/content/queries';
+import { InvolvedPeople } from '@/components/editorial/InvolvedPeople';
+import { RegistrationCTA } from '@/components/public/RegistrationCTA';
+import {
+  getEventBySlug,
+  getEvents,
+  getLinkedPeopleForEntity,
+} from '@/lib/content/queries';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { formatDate } from '@/lib/utils';
 
 type Props = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return getEvents({ includeDrafts: true }).map((item) => ({
+export async function generateStaticParams() {
+  return (await getEvents({ includeDrafts: true })).map((item) => ({
     slug: item.slug,
   }));
 }
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const item = getEventBySlug(slug, { includeDrafts: true });
+  const item = await getEventBySlug(slug, { includeDrafts: true });
   if (!item) return {};
   return buildPageMetadata(item.title, item.summary, `/events/${item.slug}`);
 }
 
 export default async function EventPage({ params }: Props) {
   const { slug } = await params;
-  const item = getEventBySlug(slug);
+  const item = await getEventBySlug(slug);
   if (!item) notFound();
 
   const when = formatDate(item.startAt, "d MMMM yyyy · h:mm a");
+  const whenShort = formatDate(item.startAt, 'd MMM yyyy');
 
   return (
     <>
@@ -38,8 +45,9 @@ export default async function EventPage({ params }: Props) {
         description={item.summary}
         breadcrumbs={[
           { label: 'Home', href: '/' },
+          { label: 'News and Events', href: '/news-events' },
           { label: 'Events', href: '/events' },
-          { label: item.title },
+          { label: 'Details' },
         ]}
       />
       <ArticleReading
@@ -48,25 +56,49 @@ export default async function EventPage({ params }: Props) {
         imageAlt={`Poster for ${item.title}`}
         imageAspect="video"
         meta={
-          <p className="font-sans text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-muted">
-            {[
-              when,
-              item.isOnline ? 'Online webinar' : item.location,
-            ]
-              .filter(Boolean)
-              .join(' · ')}
-          </p>
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-2">
+            <time
+              dateTime={item.startAt}
+              className="font-sans text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-muted"
+            >
+              <span className="sm:hidden">{whenShort}</span>
+              <span className="hidden sm:inline">{when}</span>
+            </time>
+            {item.isOnline ? (
+              <span className="inline-flex rounded-full border border-ink/12 px-2.5 py-0.5 font-sans text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-ink/65">
+                Online webinar
+              </span>
+            ) : item.location ? (
+              <span className="inline-flex rounded-full border border-ink/12 px-2.5 py-0.5 font-sans text-[0.625rem] font-semibold uppercase tracking-[0.12em] text-ink/65">
+                {item.location}
+              </span>
+            ) : null}
+          </div>
         }
         aside={
-          <EventAside
-            when={when}
-            where={item.location}
-            isOnline={item.isOnline}
-            speakers={item.speakers}
-            status={item.eventStatus}
-            registerHref={item.registrationUrl}
-            watchHref={item.recordingUrl}
-          />
+          <div className="space-y-8">
+            <EventAside
+              when={when}
+              where={item.location}
+              isOnline={item.isOnline}
+              speakers={item.speakers}
+              status={item.eventStatus}
+              registerHref={null}
+              watchHref={item.recordingUrl}
+            />
+            <RegistrationCTA
+              eventId={item.id}
+              eventStatus={item.eventStatus}
+              externalRegistrationUrl={item.registrationUrl}
+            />
+            <div className="border-t border-border pt-6">
+              <InvolvedPeople
+                entityType="event"
+                entityId={item.id}
+                initialPeople={await getLinkedPeopleForEntity('event', item.id)}
+              />
+            </div>
+          </div>
         }
         legacyUrl={item.originalLegacyUrl}
         backHref="/events"

@@ -27,15 +27,23 @@ const CATEGORIES: { label: string; value: SearchCategory }[] = [
   { label: 'Resources', value: 'resources' },
 ];
 
+const CATEGORY_LABELS: Record<string, string> = {
+  publications: 'Publication',
+  research: 'Research',
+  people: 'People',
+  news: 'News',
+  events: 'Event',
+  notices: 'Notice',
+  resources: 'Resource',
+  pages: 'Page',
+};
+
 export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [query, setQuery] = useState('');
   const [category, setCategory] = useState<SearchCategory>('all');
 
-  const searchIndex = useMemo(
-    () => getSearchIndex({ useSeed: true }),
-    [],
-  );
+  const searchIndex = useMemo(() => getSearchIndex({ useSeed: true }), []);
 
   const results: SearchResult[] = useMemo(() => {
     if (!query.trim()) {
@@ -77,7 +85,7 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
 
   return (
     <div
-      className="fixed inset-0 z-[60] flex items-start justify-center bg-ink/45 px-4 pt-[10vh] backdrop-blur-[6px] sm:pt-[12vh]"
+      className="fixed inset-0 z-[60] flex items-start justify-center bg-ink/70 px-3 pt-[8vh] backdrop-blur-md sm:px-6 sm:pt-[10vh]"
       role="dialog"
       aria-modal="true"
       aria-label="Site search"
@@ -85,31 +93,46 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
         if (event.target === event.currentTarget) onClose();
       }}
     >
-      <div className="flex w-full max-w-3xl flex-col overflow-hidden border border-border bg-white shadow-[0_28px_90px_rgba(13,39,69,0.22)]">
-        <div className="flex items-center gap-3 border-b border-border px-4 transition-[border-color] focus-within:border-accent sm:px-5">
-          <Search className="size-[1.125rem] shrink-0 text-muted" aria-hidden />
-          <input
-            ref={inputRef}
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            placeholder="Search research, people, publications…"
-            className="h-14 w-full bg-transparent font-sans text-base text-ink placeholder:text-muted !outline-none focus-visible:!outline-none"
-            style={{ outline: 'none', boxShadow: 'none' }}
-            aria-label="Search query"
-          />
+      <div className="flex w-full max-w-xl flex-col overflow-hidden rounded-[1.35rem] border border-paper/10 bg-paper shadow-[0_24px_80px_-24px_rgba(0,0,0,0.55)] sm:max-w-2xl sm:rounded-[1.75rem]">
+        <div className="flex items-center gap-3 px-4 pt-4 sm:gap-3.5 sm:px-5 sm:pt-5">
+          <div className="flex min-w-0 flex-1 items-center gap-2.5 rounded-full border border-ink/10 bg-surface-subtle px-3.5 py-2.5 sm:px-4 sm:py-3">
+            <Search
+              className="size-4 shrink-0 text-muted sm:size-[1.05rem]"
+              strokeWidth={2}
+              aria-hidden
+            />
+            <input
+              ref={inputRef}
+              value={query}
+              onChange={(event) => setQuery(event.target.value)}
+              placeholder="Search the archive…"
+              className="w-full bg-transparent font-sans text-sm text-ink outline-none placeholder:text-muted/75 sm:text-[0.9375rem]"
+              aria-label="Search query"
+            />
+            {query ? (
+              <button
+                type="button"
+                onClick={() => setQuery('')}
+                className="inline-flex size-6 shrink-0 items-center justify-center rounded-full text-muted transition-colors hover:bg-ink/5 hover:text-ink"
+                aria-label="Clear search"
+              >
+                <X className="size-3.5" strokeWidth={2.25} aria-hidden />
+              </button>
+            ) : null}
+          </div>
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex size-9 shrink-0 items-center justify-center text-muted transition-colors hover:bg-sage hover:text-ink focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-accent"
+            className="inline-flex size-10 shrink-0 items-center justify-center rounded-full border border-ink/10 text-muted transition-colors hover:border-ink/25 hover:text-ink"
             aria-label="Close search"
           >
-            <X className="size-4" aria-hidden />
+            <X className="size-4" strokeWidth={2} aria-hidden />
           </button>
         </div>
 
         <div
           data-lenis-prevent
-          className="flex gap-1.5 overflow-x-auto border-b border-border px-4 py-3 [scrollbar-width:none] sm:gap-2 sm:px-5 [&::-webkit-scrollbar]:hidden"
+          className="mt-3 flex gap-1.5 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:mt-4 sm:gap-2 sm:px-5 [&::-webkit-scrollbar]:hidden"
           role="tablist"
           aria-label="Search categories"
         >
@@ -123,10 +146,10 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
                 aria-selected={selected}
                 onClick={() => setCategory(item.value)}
                 className={cn(
-                  'shrink-0 rounded-sm px-3 py-1.5 font-sans text-[0.6875rem] font-semibold uppercase tracking-[0.06em] transition-colors focus-visible:!outline-2 focus-visible:!outline-offset-2 focus-visible:!outline-accent',
+                  'shrink-0 rounded-full border px-3 py-1.5 font-sans text-[0.6875rem] font-semibold tracking-[0.04em] transition-colors sm:px-3.5 sm:py-2 sm:text-xs',
                   selected
-                    ? 'bg-ink text-paper'
-                    : 'bg-surface-subtle text-ink/70 hover:bg-sage hover:text-ink',
+                    ? 'border-ink bg-ink text-paper'
+                    : 'border-ink/10 bg-white text-ink/65 hover:border-ink/25 hover:text-ink',
                 )}
               >
                 {item.label}
@@ -137,48 +160,46 @@ export function SearchOverlay({ open, onClose }: SearchOverlayProps) {
 
         <ul
           data-lenis-prevent
-          className="max-h-[min(28rem,52vh)] overflow-y-auto overscroll-contain py-1 [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-ink/25 [&::-webkit-scrollbar-track]:bg-transparent"
+          className="mt-2 max-h-[min(22rem,48vh)] overflow-y-auto overscroll-contain px-2 pb-2 sm:mt-3 sm:max-h-[min(24rem,50vh)] sm:px-3 sm:pb-3 [scrollbar-gutter:stable] [scrollbar-width:thin] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-ink/20"
         >
           {results.length === 0 ? (
-            <li className="px-5 py-12 text-center font-sans text-sm text-muted">
-              No results for “{query}”.
+            <li className="px-3 py-10 text-center font-instrument text-sm text-muted sm:py-12">
+              No matches for “{query}”.
             </li>
           ) : (
-            results.map((result, index) => (
-              <li
-                key={`${result.category}-${result.id}`}
-                className={cn(index > 0 && 'border-t border-border/80')}
-              >
+            results.map((result) => (
+              <li key={`${result.category}-${result.id}`}>
                 <Link
                   href={result.href}
                   onClick={onClose}
-                  className="block px-5 py-[1.125rem] transition-colors hover:bg-sage/55 focus-visible:bg-sage/55 focus-visible:!outline-none"
+                  className="group block rounded-[1rem] px-3 py-3 transition-colors hover:bg-surface-subtle sm:rounded-[1.15rem] sm:px-3.5 sm:py-3.5"
                 >
-                  <span className="font-sans text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-brand-blue">
-                    {result.category}
+                  <span className="font-sans text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-muted">
+                    {CATEGORY_LABELS[result.category] ?? result.category}
                   </span>
-                  <span className="mt-1.5 block font-sans text-[0.9375rem] font-semibold leading-snug text-ink">
+                  <span className="mt-1 block font-instrument text-[0.975rem] font-medium leading-snug text-ink transition-colors group-hover:text-accent sm:text-base">
                     {result.title}
                   </span>
-                  <span className="mt-1.5 line-clamp-2 block text-[0.8125rem] leading-relaxed text-muted">
-                    {result.excerpt}
-                  </span>
+                  {result.excerpt ? (
+                    <span className="mt-1 line-clamp-2 block text-[0.8125rem] leading-relaxed text-muted">
+                      {result.excerpt}
+                    </span>
+                  ) : null}
                 </Link>
               </li>
             ))
           )}
         </ul>
 
-        <div className="flex items-center justify-between gap-4 border-t border-border bg-surface-subtle px-5 py-3">
-          <p className="font-sans text-xs text-muted">
-            Press{' '}
-            <kbd className="mx-0.5 inline-flex min-w-[1.6rem] items-center justify-center border border-border bg-white px-1.5 py-0.5 font-sans text-[0.6875rem] font-semibold text-ink shadow-[0_1px_0_var(--color-border)]">
+        <div className="flex items-center justify-between gap-3 border-t border-ink/8 px-4 py-2.5 sm:px-5 sm:py-3">
+          <p className="font-sans text-[0.6875rem] text-muted">
+            <kbd className="mr-1 inline-flex min-w-[1.5rem] items-center justify-center rounded-md border border-ink/10 bg-surface-subtle px-1.5 py-0.5 font-sans text-[0.625rem] font-semibold text-ink/70">
               Esc
-            </kbd>{' '}
-            to close
+            </kbd>
+            close
           </p>
           {results.length > 0 ? (
-            <p className="font-sans text-xs tabular-nums text-muted">
+            <p className="font-sans text-[0.6875rem] tabular-nums text-muted">
               {results.length} result{results.length === 1 ? '' : 's'}
             </p>
           ) : null}

@@ -11,7 +11,7 @@ export const mainNavigation: NavigationItem[] = [
         id: 'nav-about-who',
         label: 'Who we are',
         href: '/about/who-we-are',
-        description: 'Mission, vision, and institutional story',
+        description: 'Evidence, policy, and institutional story',
         order: 1,
       },
       {
@@ -70,6 +70,13 @@ export const mainNavigation: NavigationItem[] = [
         label: 'Career at BKSR',
         href: '/people/career',
         order: 5,
+      },
+      {
+        id: 'nav-people-join',
+        label: 'Apply to join',
+        href: '/join',
+        description: 'Apply to the research community or organisational team',
+        order: 6,
       },
     ],
   },
@@ -166,12 +173,12 @@ export const mainNavigation: NavigationItem[] = [
   {
     id: 'nav-news-events',
     label: 'News and Events',
-    href: '/events',
+    href: '/news-events',
     order: 6,
     children: [
       {
         id: 'nav-notices',
-        label: 'Notice',
+        label: 'Notices',
         href: '/notices',
         order: 1,
       },
@@ -224,8 +231,8 @@ export const footerNavigation: NavigationItem[] = [
   },
   {
     id: 'footer-events',
-    label: 'Events',
-    href: '/events',
+    label: 'News and Events',
+    href: '/news-events',
     order: 6,
   },
   {

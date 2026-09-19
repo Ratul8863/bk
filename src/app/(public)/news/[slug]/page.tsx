@@ -7,13 +7,13 @@ import { formatDate } from '@/lib/utils';
 
 type Props = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return getNews({ includeDrafts: true }).map((item) => ({ slug: item.slug }));
+export async function generateStaticParams() {
+  return (await getNews({ includeDrafts: true })).map((item) => ({ slug: item.slug }));
 }
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const item = getNewsBySlug(slug, { includeDrafts: true });
+  const item = await getNewsBySlug(slug, { includeDrafts: true });
   if (!item) return {};
   return buildPageMetadata(
     item.title,
@@ -24,7 +24,7 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function DetailPage({ params }: Props) {
   const { slug } = await params;
-  const item = getNewsBySlug(slug);
+  const item = await getNewsBySlug(slug);
   if (!item) notFound();
 
   return (

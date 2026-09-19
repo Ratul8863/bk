@@ -1,13 +1,6 @@
-'use client';
+import { redirect } from 'next/navigation';
 
-import { SettingsEditorPage } from '@/components/admin/SettingsEditorPage';
-
+/** SEO is not managed in the content CMS — defaults live in code / site settings seed. */
 export default function Page() {
-  return (
-    <SettingsEditorPage
-      mode="seo"
-      title="SEO Defaults"
-      description="Fallback title, description, keywords, and OG image for pages without custom SEO."
-    />
-  );
+  redirect('/admin');
 }

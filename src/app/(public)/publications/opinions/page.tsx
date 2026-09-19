@@ -11,7 +11,7 @@ export const metadata = buildPageMetadata(
   '/publications/opinions',
 );
 
-export default function Page() {
+export default async function Page() {
   return (
     <>
       <PageHero
@@ -26,8 +26,8 @@ export default function Page() {
       <Section>
         <Container>
           <PublicationFilters
-            publications={getPublications()}
-            areas={getResearchAreas()}
+            publications={await getPublications()}
+            areas={await getResearchAreas()}
             initialType="opinion"
           />
         </Container>

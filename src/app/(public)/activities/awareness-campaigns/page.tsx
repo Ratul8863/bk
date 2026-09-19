@@ -3,7 +3,9 @@ import {
   activityMetadata,
 } from '@/components/public/ActivityProgrammePage';
 
-export const metadata = activityMetadata('awareness-campaigns');
+export async function generateMetadata() {
+  return activityMetadata('awareness-campaigns');
+}
 
 export default function Page() {
   return <ActivityProgrammePage routeSlug="awareness-campaigns" />;

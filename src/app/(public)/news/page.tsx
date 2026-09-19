@@ -11,6 +11,7 @@ import {
   MediaCardMeta,
   MediaCardTitle,
 } from '@/components/ui/MediaCard';
+import { pageHeroMedia } from '@/lib/content/page-heroes';
 import { getNews } from '@/lib/content/queries';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { formatDate } from '@/lib/utils';
@@ -21,8 +22,8 @@ export const metadata = buildPageMetadata(
   '/news',
 );
 
-export default function Page() {
-  const items = getNews();
+export default async function Page() {
+  const items = await getNews();
   const [featured, ...rest] = items;
 
   return (
@@ -31,9 +32,10 @@ export default function Page() {
         eyebrow="Updates"
         title="News"
         description="Editorial notes, essays, and commentary from the BKSR community — migrated from the legacy archive."
+        imageSrc={pageHeroMedia.news}
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'News' }]}
       />
-      <Section>
+      <Section tone="white">
         <Container>
           {!items.length ? (
             <EmptyState

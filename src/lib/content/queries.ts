@@ -1,4 +1,14 @@
-import { getSeedDatabase } from '@/lib/cms/repository';
+import 'server-only';
+import { getContentDatabase } from '@/lib/cms/get-content-database';
+import {
+  getMemberAchievementsForPerson,
+  getRoleAssignmentsForPerson,
+  getVerifiedAchievementsForPerson,
+} from '@/lib/content/people-ops';
+import {
+  getResolvedInvolvementsForPerson,
+  getResolvedPeopleForEntity,
+} from '@/lib/content/person-links';
 import type {
   Activity,
   ContentStatus,
@@ -13,6 +23,8 @@ import type {
   Page,
   Person,
   PersonCategory,
+  PersonContentLink,
+  PersonLinkEntityType,
   Publication,
   PublicationType,
   ResearchArea,
@@ -42,72 +54,105 @@ function byOrder<T extends { order?: number }>(a: T, b: T): number {
   return (a.order ?? 999) - (b.order ?? 999);
 }
 
-export function getSiteSettings(): SiteSettings {
-  return getSeedDatabase().siteSettings;
+export async function getSiteSettings(): Promise<SiteSettings> {
+  return (await getContentDatabase()).siteSettings;
 }
 
-export function getNavigation(): {
+export async function getNavigation(): Promise<{
   main: NavigationItem[];
   footer: NavigationItem[];
   knowledgeHub: NavigationItem[];
-} {
-  return getSeedDatabase().navigation;
+}> {
+  const navigation = (await getContentDatabase()).navigation;
+  return {
+    ...navigation,
+    main: ensurePeopleJoinNav(navigation.main),
+  };
 }
 
-export function getHomepageConfig(): HomepageConfig {
-  return getSeedDatabase().homepage;
+/** Keep Apply to join discoverable under People even on older CMS nav snapshots. */
+function ensurePeopleJoinNav(main: NavigationItem[]): NavigationItem[] {
+  return main.map((item) => {
+    if (item.href !== '/people' || !item.children?.length) return item;
+    if (item.children.some((child) => child.href === '/join')) return item;
+    return {
+      ...item,
+      children: [
+        ...item.children,
+        {
+          id: 'nav-people-join',
+          label: 'Apply to join',
+          href: '/join',
+          description: 'Apply to the research community or organisational team',
+          order: Math.max(...item.children.map((c) => c.order), 0) + 1,
+        },
+      ],
+    };
+  });
 }
 
-export function getPages(options?: PublishedFilter): Page[] {
-  return filterPublished(getSeedDatabase().pages, options).sort(byOrder);
+export async function getHomepageConfig(): Promise<HomepageConfig> {
+  return (await getContentDatabase()).homepage;
 }
 
-export function getPageBySlug(
+export async function getPages(options?: PublishedFilter): Promise<Page[]> {
+  return filterPublished((await getContentDatabase()).pages, options).sort(byOrder);
+}
+
+export async function getPageBySlug(
   slug: string,
   options?: PublishedFilter,
-): Page | undefined {
-  return getPages(options).find((page) => page.slug === slug);
+): Promise<Page | undefined> {
+  return (await getPages(options)).find((page) => page.slug === slug);
 }
 
-export function getPeople(
+export async function getPeople(
   options?: PublishedFilter & { category?: PersonCategory },
-): Person[] {
-  let people = filterPublished(getSeedDatabase().people, options);
+): Promise<Person[]> {
+  let people = filterPublished((await getContentDatabase()).people, options);
   if (options?.category) {
     people = people.filter((person) => person.category === options.category);
   }
   return people.sort(byOrder);
 }
 
-export function getPersonBySlug(
+export async function getPersonBySlug(
   slug: string,
   options?: PublishedFilter,
-): Person | undefined {
-  return getPeople(options).find((person) => person.slug === slug);
+): Promise<Person | undefined> {
+  return (await getPeople(options)).find((person) => person.slug === slug);
 }
 
-export function getPersonById(
+export async function getPersonById(
   id: string,
   options?: PublishedFilter,
-): Person | undefined {
-  return getPeople(options).find((person) => person.id === id);
+): Promise<Person | undefined> {
+  return (await getPeople(options)).find((person) => person.id === id);
 }
 
-export function getResearchAreas(options?: PublishedFilter): ResearchArea[] {
-  return filterPublished(getSeedDatabase().researchAreas, options).sort(byOrder);
+export async function getResearchAreas(
+  options?: PublishedFilter,
+): Promise<ResearchArea[]> {
+  return filterPublished(
+    (await getContentDatabase()).researchAreas,
+    options,
+  ).sort(byOrder);
 }
 
-export function getResearchAreaBySlug(
+export async function getResearchAreaBySlug(
   slug: string,
   options?: PublishedFilter,
-): ResearchArea | undefined {
-  return getResearchAreas(options).find((area) => area.slug === slug);
+): Promise<ResearchArea | undefined> {
+  return (await getResearchAreas(options)).find((area) => area.slug === slug);
 }
 
-export function getResearchProjects(
+export async function getResearchProjects(
   options?: PublishedFilter & { researchStatus?: ResearchStatus },
-): ResearchProject[] {
-  let projects = filterPublished(getSeedDatabase().researchProjects, options);
+): Promise<ResearchProject[]> {
+  let projects = filterPublished(
+    (await getContentDatabase()).researchProjects,
+    options,
+  );
   if (options?.researchStatus) {
     projects = projects.filter(
       (project) => project.researchStatus === options.researchStatus,
@@ -116,131 +161,218 @@ export function getResearchProjects(
   return projects;
 }
 
-export function getResearchProjectBySlug(
+export async function getResearchProjectBySlug(
   slug: string,
   options?: PublishedFilter,
-): ResearchProject | undefined {
-  return getResearchProjects(options).find((project) => project.slug === slug);
+): Promise<ResearchProject | undefined> {
+  return (await getResearchProjects(options)).find(
+    (project) => project.slug === slug,
+  );
 }
 
-export function getResearchProjectById(
+export async function getResearchProjectById(
   id: string,
   options?: PublishedFilter,
-): ResearchProject | undefined {
-  return getResearchProjects(options).find((project) => project.id === id);
+): Promise<ResearchProject | undefined> {
+  return (await getResearchProjects(options)).find(
+    (project) => project.id === id,
+  );
 }
 
-export function getPublications(
+export async function getPublications(
   options?: PublishedFilter & { type?: PublicationType; year?: number },
-): Publication[] {
-  let publications = filterPublished(getSeedDatabase().publications, options);
+): Promise<Publication[]> {
+  let publications = filterPublished(
+    (await getContentDatabase()).publications,
+    options,
+  );
   if (options?.type) {
     publications = publications.filter((pub) => pub.type === options.type);
   }
   if (options?.year != null) {
     publications = publications.filter((pub) => pub.year === options.year);
   }
-  return publications.sort((a, b) => b.year - a.year || a.title.localeCompare(b.title));
+  return publications.sort(
+    (a, b) => b.year - a.year || a.title.localeCompare(b.title),
+  );
 }
 
-export function getPublicationBySlug(
+export async function getPublicationBySlug(
   slug: string,
   options?: PublishedFilter,
-): Publication | undefined {
-  return getPublications(options).find((pub) => pub.slug === slug);
+): Promise<Publication | undefined> {
+  return (await getPublications(options)).find((pub) => pub.slug === slug);
 }
 
-export function getPublicationById(
+export async function getPublicationById(
   id: string,
   options?: PublishedFilter,
-): Publication | undefined {
-  return getPublications(options).find((pub) => pub.id === id);
+): Promise<Publication | undefined> {
+  return (await getPublications(options)).find((pub) => pub.id === id);
 }
 
-export function getActivities(options?: PublishedFilter): Activity[] {
-  return filterPublished(getSeedDatabase().activities, options).sort(byOrder);
+export async function getActivities(
+  options?: PublishedFilter,
+): Promise<Activity[]> {
+  return filterPublished(
+    (await getContentDatabase()).activities,
+    options,
+  ).sort(byOrder);
 }
 
-export function getActivityBySlug(
+export async function getActivityBySlug(
   slug: string,
   options?: PublishedFilter,
-): Activity | undefined {
-  return getActivities(options).find((activity) => activity.slug === slug);
+): Promise<Activity | undefined> {
+  return (await getActivities(options)).find(
+    (activity) => activity.slug === slug,
+  );
 }
 
-export function getNews(options?: PublishedFilter): NewsArticle[] {
-  return filterPublished(getSeedDatabase().news, options).sort((a, b) => {
-    const aDate = a.publishedAt ?? a.createdAt;
-    const bDate = b.publishedAt ?? b.createdAt;
-    return bDate.localeCompare(aDate);
-  });
+export async function getNews(
+  options?: PublishedFilter,
+): Promise<NewsArticle[]> {
+  return filterPublished((await getContentDatabase()).news, options).sort(
+    (a, b) => {
+      const aDate = a.publishedAt ?? a.createdAt;
+      const bDate = b.publishedAt ?? b.createdAt;
+      return bDate.localeCompare(aDate);
+    },
+  );
 }
 
-export function getNewsBySlug(
+export async function getNewsBySlug(
   slug: string,
   options?: PublishedFilter,
-): NewsArticle | undefined {
-  return getNews(options).find((article) => article.slug === slug);
+): Promise<NewsArticle | undefined> {
+  return (await getNews(options)).find((article) => article.slug === slug);
 }
 
-export function getEvents(
+export async function getEvents(
   options?: PublishedFilter & { eventStatus?: Event['eventStatus'] },
-): Event[] {
-  let events = filterPublished(getSeedDatabase().events, options);
+): Promise<Event[]> {
+  let events = filterPublished((await getContentDatabase()).events, options);
   if (options?.eventStatus) {
     events = events.filter((event) => event.eventStatus === options.eventStatus);
   }
   return events.sort((a, b) => b.startAt.localeCompare(a.startAt));
 }
 
-export function getEventBySlug(
+export async function getEventBySlug(
   slug: string,
   options?: PublishedFilter,
-): Event | undefined {
-  return getEvents(options).find((event) => event.slug === slug);
+): Promise<Event | undefined> {
+  return (await getEvents(options)).find((event) => event.slug === slug);
 }
 
-export function getNotices(options?: PublishedFilter): Notice[] {
-  return filterPublished(getSeedDatabase().notices, options).sort((a, b) => {
-    const aDate = a.publishedAt ?? a.createdAt;
-    const bDate = b.publishedAt ?? b.createdAt;
-    return bDate.localeCompare(aDate);
-  });
+export async function getNotices(options?: PublishedFilter): Promise<Notice[]> {
+  return filterPublished((await getContentDatabase()).notices, options).sort(
+    (a, b) => {
+      const aDate = a.publishedAt ?? a.createdAt;
+      const bDate = b.publishedAt ?? b.createdAt;
+      return bDate.localeCompare(aDate);
+    },
+  );
 }
 
-export function getNoticeBySlug(
+export async function getNoticeBySlug(
   slug: string,
   options?: PublishedFilter,
-): Notice | undefined {
-  return getNotices(options).find((notice) => notice.slug === slug);
+): Promise<Notice | undefined> {
+  return (await getNotices(options)).find((notice) => notice.slug === slug);
 }
 
-export function getResources(options?: PublishedFilter): Resource[] {
-  return filterPublished(getSeedDatabase().resources, options);
+export async function getResources(
+  options?: PublishedFilter,
+): Promise<Resource[]> {
+  return filterPublished((await getContentDatabase()).resources, options);
 }
 
-export function getResourceBySlug(
+export async function getResourceBySlug(
   slug: string,
   options?: PublishedFilter,
-): Resource | undefined {
-  return getResources(options).find((resource) => resource.slug === slug);
+): Promise<Resource | undefined> {
+  return (await getResources(options)).find(
+    (resource) => resource.slug === slug,
+  );
 }
 
-export function getGalleryAlbums(options?: PublishedFilter): GalleryAlbum[] {
-  return filterPublished(getSeedDatabase().galleryAlbums, options);
+export async function getGalleryAlbums(
+  options?: PublishedFilter,
+): Promise<GalleryAlbum[]> {
+  return filterPublished((await getContentDatabase()).galleryAlbums, options);
 }
 
-export function getGalleryImages(options?: PublishedFilter): GalleryImage[] {
-  return filterPublished(getSeedDatabase().galleryImages, options).sort(byOrder);
+export async function getGalleryImages(
+  options?: PublishedFilter,
+): Promise<GalleryImage[]> {
+  return filterPublished(
+    (await getContentDatabase()).galleryImages,
+    options,
+  ).sort(byOrder);
 }
 
-export function getMedia(options?: PublishedFilter): MediaAsset[] {
-  return filterPublished(getSeedDatabase().media, options);
+export async function getMedia(
+  options?: PublishedFilter,
+): Promise<MediaAsset[]> {
+  return filterPublished((await getContentDatabase()).media, options);
 }
 
-export function getMediaById(
+export async function getMediaById(
   id: string,
   options?: PublishedFilter,
-): MediaAsset | undefined {
-  return getMedia(options).find((asset) => asset.id === id);
+): Promise<MediaAsset | undefined> {
+  return (await getMedia(options)).find((asset) => asset.id === id);
+}
+
+export async function getPersonContentLinks(): Promise<PersonContentLink[]> {
+  return (await getContentDatabase()).personContentLinks ?? [];
+}
+
+export async function getLinkedPeopleForEntity(
+  entityType: PersonLinkEntityType,
+  entityId: string,
+) {
+  return getResolvedPeopleForEntity(
+    await getContentDatabase(),
+    entityType,
+    entityId,
+  );
+}
+
+export async function getInvolvementsForPerson(personId: string) {
+  return getResolvedInvolvementsForPerson(
+    await getContentDatabase(),
+    personId,
+  );
+}
+
+export async function getRoleHistoryForPerson(personId: string) {
+  return getRoleAssignmentsForPerson(
+    await getContentDatabase(),
+    personId,
+  ).map((row) => ({
+    id: row.id,
+    year: row.year,
+    role: row.role,
+  }));
+}
+
+export async function getAchievementsProfileForPerson(personId: string) {
+  const db = await getContentDatabase();
+  return {
+    verified: getVerifiedAchievementsForPerson(db, personId).map((row) => ({
+      id: row.assignment.id,
+      title: row.achievement!.title,
+      description: row.achievement!.description,
+      certificateCode: row.assignment.certificateCode ?? null,
+      assignedAt: row.assignment.assignedAt,
+    })),
+    member: getMemberAchievementsForPerson(db, personId).map((row) => ({
+      id: row.id,
+      title: row.title,
+      description: row.description,
+      year: row.year,
+    })),
+  };
 }

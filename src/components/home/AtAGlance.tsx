@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useReducedMotion } from 'motion/react';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import { Container } from '@/components/ui/Container';
 import { Section } from '@/components/ui/Section';
 import { cn } from '@/lib/utils';
@@ -20,32 +20,23 @@ type AtAGlanceProps = {
   lead?: string;
 };
 
-/** Stack offsets — mobile keeps cards inside the viewport; desktop matches Figma depth. */
-const STACK_MOBILE = [
-  { x: 0, y: 36, z: 30, shadow: true },
-  { x: 12, y: 18, z: 20, shadow: true },
-  { x: 24, y: 2, z: 10, shadow: false },
-] as const;
-
-const STACK_DESKTOP = [
+/**
+ * Scaled ~72% of Figma 189:374 so the stack fits the 1320px site container.
+ * Offsets stay the same on all breakpoints — width accounts for fan depth
+ * so nothing clips at the viewport edge.
+ */
+const STACK = [
   { x: 0, y: 56, z: 30, shadow: true },
   { x: 28, y: 28, z: 20, shadow: true },
   { x: 56, y: 4, z: 10, shadow: false },
 ] as const;
 
+const STACK_Y = Math.max(...STACK.map((pose) => pose.y));
+
 export function AtAGlance({ items, lead }: AtAGlanceProps) {
   const reduceMotion = useReducedMotion();
   const [active, setActive] = useState(0);
-  const [compact, setCompact] = useState(true);
   const count = items.length;
-
-  useEffect(() => {
-    const media = window.matchMedia('(max-width: 639px)');
-    const sync = () => setCompact(media.matches);
-    sync();
-    media.addEventListener('change', sync);
-    return () => media.removeEventListener('change', sync);
-  }, []);
 
   if (!count) return null;
 
@@ -54,8 +45,6 @@ export function AtAGlance({ items, lead }: AtAGlanceProps) {
   };
 
   const stackRank = (index: number) => (index - active + count) % count;
-  const stack = compact ? STACK_MOBILE : STACK_DESKTOP;
-  const maxOffsetX = stack[stack.length - 1]?.x ?? 0;
 
   return (
     <Section
@@ -82,7 +71,7 @@ export function AtAGlance({ items, lead }: AtAGlanceProps) {
             </h2>
           </div>
 
-          <div className="flex min-w-0 w-full shrink-0 flex-col items-center gap-5 sm:w-auto sm:flex-row sm:items-end sm:gap-8 lg:gap-10">
+          <div className="flex min-w-0 w-full shrink-0 flex-col items-center gap-5 sm:flex-row sm:items-end sm:justify-center sm:gap-8 lg:w-auto lg:justify-start lg:gap-10">
             <div className="relative z-40 order-2 flex items-center gap-4 sm:order-1">
               <NavButton
                 label="Previous glance card"
@@ -96,14 +85,20 @@ export function AtAGlance({ items, lead }: AtAGlanceProps) {
               />
             </div>
 
+            {/*
+              Frame width = card + fan X so translated back-cards stay inside.
+              No overflow:hidden — that was clipping the Figma stack mid-edge.
+            */}
             <div
-              className="relative order-1 h-[17.5rem] w-full max-w-[min(100%,24rem)] overflow-hidden sm:order-2 sm:h-[22.5rem] sm:w-[24rem] sm:overflow-visible lg:w-[26rem]"
+              className="relative order-1 w-full max-w-[calc(22.5rem+3.5rem)] sm:order-2 sm:w-[calc(22.5rem+3.5rem)]"
+              style={{
+                height: `calc(16.75rem + ${STACK_Y}px)`,
+              }}
               aria-live="polite"
             >
               {items.map((item, index) => {
                 const rank = stackRank(index);
-                const pose =
-                  stack[Math.min(rank, stack.length - 1)] ?? stack[0];
+                const pose = STACK[Math.min(rank, STACK.length - 1)] ?? STACK[0];
                 const isFront = rank === 0;
 
                 return (
@@ -113,8 +108,7 @@ export function AtAGlance({ items, lead }: AtAGlanceProps) {
                     aria-hidden={!isFront}
                     tabIndex={isFront ? 0 : -1}
                     className={cn(
-                      'absolute left-0 top-0 flex flex-col gap-3 rounded-[1.5rem] bg-white p-1',
-                      'w-[calc(100%-var(--stack-x))] sm:w-[22.5rem]',
+                      'absolute left-0 top-0 flex w-[min(100%-3.5rem,22.5rem)] flex-col gap-3 rounded-[1.5rem] bg-white p-1 sm:w-[22.5rem]',
                       pose.shadow &&
                         'shadow-[4px_-10px_8px_rgba(0,0,0,0.22)]',
                       !reduceMotion &&
@@ -122,7 +116,6 @@ export function AtAGlance({ items, lead }: AtAGlanceProps) {
                       !isFront && 'pointer-events-none',
                     )}
                     style={{
-                      ['--stack-x' as string]: `${maxOffsetX}px`,
                       zIndex: pose.z,
                       transform: `translate(${pose.x}px, ${pose.y}px)`,
                       opacity: rank > 2 ? 0 : 1,

@@ -5,6 +5,10 @@ import { useSearchParams } from 'next/navigation';
 import { Plus, Trash2 } from 'lucide-react';
 import { v4 as uuidv4 } from 'uuid';
 import type { NavigationItem } from '@/types/content';
+import {
+  AdminPageHeader,
+  AdminPrimaryButton,
+} from './AdminUI';
 import { useCms } from './CmsProvider';
 
 type NavTab = 'main' | 'footer' | 'knowledgeHub';
@@ -115,8 +119,8 @@ export function NavigationEditorPage() {
     return <p className="text-sm text-[#68727D]">Loading navigation…</p>;
   }
 
-  const save = () => {
-    saveNavigation({ [tab]: nestNav(rows) });
+  const save = async () => {
+    await saveNavigation({ [tab]: nestNav(rows) });
     setMessage('Navigation saved');
     window.setTimeout(() => setMessage(null), 2000);
   };
@@ -169,32 +173,26 @@ export function NavigationEditorPage() {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-[family-name:var(--font-admin-display)] text-2xl text-[#0D2745]">
-            Navigation
-          </h1>
-          <p className="mt-1 text-sm text-[#68727D]">
-            Edit main, footer, and knowledge hub menus — label, URL, order,
-            parent, and visibility.
-          </p>
-        </div>
-        <div className="flex items-center gap-2">
-          {message ? (
-            <span className="text-xs font-medium text-[#173B6C]">{message}</span>
-          ) : null}
-          <button
-            type="button"
-            onClick={save}
-            className="rounded-lg bg-[#173B6C] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#0D2745]"
-          >
-            Save navigation
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        eyebrow="Site"
+        title="Navigation"
+        description="Edit main, footer, and knowledge hub menus — label, URL, order, parent, and visibility."
+        action={
+          <>
+            {message ? (
+              <span className="text-xs font-semibold text-[#173B6C]">
+                {message}
+              </span>
+            ) : null}
+            <AdminPrimaryButton onClick={() => void save()}>
+              Save navigation
+            </AdminPrimaryButton>
+          </>
+        }
+      />
 
-      <div className="flex flex-wrap gap-1 border-b border-[#D9DEE5]">
+      <div className="flex flex-wrap gap-1 border-b border-[#E2E8F0]">
         {(
           [
             ['main', 'Main'],

@@ -2,33 +2,35 @@ import type { LucideIcon } from 'lucide-react';
 import {
   Activity,
   BookOpen,
-  Briefcase,
   Calendar,
   Camera,
+  Award,
+  ClipboardList,
   Compass,
   FileText,
   FolderOpen,
+  History,
   Home,
   Image,
   LayoutDashboard,
-  LayoutTemplate,
-  Link2,
   Mail,
   Megaphone,
   Menu,
   Newspaper,
-  PanelBottom,
   Settings,
   Share2,
   Shield,
+  UserPlus,
   Users,
   FlaskConical,
+  Link2,
 } from 'lucide-react';
 
 export interface AdminNavItem {
   label: string;
   href: string;
   icon: LucideIcon;
+  description?: string;
 }
 
 export interface AdminNavGroup {
@@ -36,63 +38,187 @@ export interface AdminNavGroup {
   items: AdminNavItem[];
 }
 
+/**
+ * Content-ops CMS nav — library items, people, events/forms.
+ * Design tokens, SEO, and button styling stay in code — not editable here.
+ */
 export const adminNavGroups: AdminNavGroup[] = [
   {
     label: 'Overview',
-    items: [{ label: 'Dashboard', href: '/admin', icon: LayoutDashboard }],
-  },
-  {
-    label: 'Content',
     items: [
-      { label: 'Pages', href: '/admin/pages', icon: FileText },
-      { label: 'Homepage', href: '/admin/homepage', icon: Home },
-      { label: 'Research', href: '/admin/research', icon: FlaskConical },
-      { label: 'Publications', href: '/admin/publications', icon: BookOpen },
-      { label: 'News', href: '/admin/news', icon: Newspaper },
-      { label: 'Events', href: '/admin/events', icon: Calendar },
-      { label: 'Notices', href: '/admin/notices', icon: Megaphone },
-      { label: 'Activities', href: '/admin/activities', icon: Activity },
-      { label: 'Resources', href: '/admin/resources', icon: FolderOpen },
-      { label: 'Gallery', href: '/admin/gallery', icon: Camera },
+      {
+        label: 'Overview',
+        href: '/admin',
+        icon: LayoutDashboard,
+        description: 'What is published on the site',
+      },
     ],
   },
   {
-    label: 'People',
-    items: [{ label: 'All People', href: '/admin/people', icon: Users }],
-  },
-  {
-    label: 'Organization',
+    label: 'Homepage',
     items: [
-      { label: 'Research Areas', href: '/admin/research-areas', icon: Compass },
-      { label: 'Policies / Pages', href: '/admin/pages', icon: Briefcase },
+      {
+        label: 'Homepage content',
+        href: '/admin/homepage',
+        icon: Home,
+        description: 'Welcome line, featured picks, director message, stats',
+      },
     ],
   },
   {
-    label: 'Media',
-    items: [{ label: 'Media Library', href: '/admin/media', icon: Image }],
-  },
-  {
-    label: 'Appearance',
+    label: 'Content library',
     items: [
-      { label: 'Navigation', href: '/admin/navigation', icon: Menu },
-      { label: 'Footer', href: '/admin/navigation?tab=footer', icon: PanelBottom },
-      { label: 'Homepage Sections', href: '/admin/homepage?tab=sections', icon: LayoutTemplate },
-      { label: 'Site Settings', href: '/admin/settings', icon: Settings },
+      {
+        label: 'Research projects',
+        href: '/admin/research',
+        icon: FlaskConical,
+        description: 'Ongoing & completed · links · focus areas',
+      },
+      {
+        label: 'Focus areas',
+        href: '/admin/research-areas',
+        icon: Compass,
+        description: 'Categories for research filters',
+      },
+      {
+        label: 'Publications',
+        href: '/admin/publications',
+        icon: BookOpen,
+        description: '→ /publications',
+      },
+      {
+        label: 'News',
+        href: '/admin/news',
+        icon: Newspaper,
+        description: '→ /news',
+      },
+      {
+        label: 'Events',
+        href: '/admin/events',
+        icon: Calendar,
+        description: '→ /events',
+      },
+      {
+        label: 'Notices',
+        href: '/admin/notices',
+        icon: Megaphone,
+        description: '→ /notices',
+      },
+      {
+        label: 'Programmes & activities',
+        href: '/admin/activities',
+        icon: Activity,
+        description: '→ /activities',
+      },
+      {
+        label: 'Resources',
+        href: '/admin/resources',
+        icon: FolderOpen,
+        description: '→ /resources',
+      },
+      {
+        label: 'Team & people',
+        href: '/admin/people',
+        icon: Users,
+        description: '→ /people',
+      },
+      {
+        label: 'About pages',
+        href: '/admin/pages',
+        icon: FileText,
+        description: '→ /about/…',
+      },
     ],
   },
   {
-    label: 'Communication',
+    label: 'Events & applications',
     items: [
-      { label: 'Contact Info', href: '/admin/contact', icon: Mail },
-      { label: 'Social', href: '/admin/social', icon: Share2 },
+      {
+        label: 'Forms',
+        href: '/admin/registration-forms',
+        icon: ClipboardList,
+        description: 'Events, Career vacancies + entries',
+      },
+      {
+        label: 'Join applications',
+        href: '/admin/join-applications',
+        icon: UserPlus,
+        description: 'People applying to join BKSR',
+      },
+      {
+        label: 'Achievements & certificates',
+        href: '/admin/achievements',
+        icon: Award,
+      },
     ],
   },
   {
-    label: 'SEO',
-    items: [{ label: 'Defaults', href: '/admin/seo', icon: Link2 }],
+    label: 'People operations',
+    items: [
+      {
+        label: 'Committee / role history',
+        href: '/admin/role-history',
+        icon: History,
+      },
+      {
+        label: 'Who worked on what',
+        href: '/admin/involvements',
+        icon: Link2,
+      },
+    ],
+  },
+  {
+    label: 'Photos',
+    items: [
+      {
+        label: 'Photo & file library',
+        href: '/admin/media',
+        icon: Image,
+      },
+      {
+        label: 'Gallery albums',
+        href: '/admin/gallery',
+        icon: Camera,
+        description: '→ /gallery',
+      },
+    ],
+  },
+  {
+    label: 'Organisation',
+    items: [
+      {
+        label: 'Organisation profile',
+        href: '/admin/settings',
+        icon: Settings,
+        description: 'Name, mission, vision',
+      },
+      {
+        label: 'Contact details',
+        href: '/admin/contact',
+        icon: Mail,
+      },
+      {
+        label: 'Social links',
+        href: '/admin/social',
+        icon: Share2,
+      },
+      {
+        label: 'Menus',
+        href: '/admin/navigation',
+        icon: Menu,
+        description: 'Header and footer links',
+      },
+    ],
   },
   {
     label: 'System',
-    items: [{ label: 'CMS Settings', href: '/admin/system', icon: Shield }],
+    items: [
+      {
+        label: 'System & data',
+        href: '/admin/system',
+        icon: Shield,
+        description: 'Storage and unlock',
+      },
+    ],
   },
 ];

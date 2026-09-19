@@ -1,8 +1,9 @@
-import { PageHero } from '@/components/layout/PageHero';
+﻿import { PageHero } from '@/components/layout/PageHero';
 import { Container } from '@/components/ui/Container';
 import { Section } from '@/components/ui/Section';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { ArrowLink } from '@/components/ui/ArrowLink';
+import { pageHeroMedia } from '@/lib/content/page-heroes';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = buildPageMetadata(
@@ -18,23 +19,31 @@ export default function GalleryPage() {
         eyebrow="Archive"
         title="Gallery"
         description="Photographs and visual records from BKSR programmes and community life."
+        imageSrc={pageHeroMedia.gallery}
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Gallery' }]}
-      />
-      <Section>
-        <Container narrow>
-          <EmptyState
-            title="Coming soon"
-            description="The legacy gallery page was marked “Coming soon” and contained no published images. Authentic event photography will appear here as it is catalogued — we are not inventing a stock gallery."
-          />
-          <p className="mt-10 text-base leading-relaxed text-muted">
-            Meanwhile, programme visuals live with their source records on Events
-            and Activities pages, and leadership photography appears on People.
-          </p>
-          <div className="mt-8 flex flex-wrap gap-6">
+        actions={
+          <>
             <ArrowLink href="/events">Browse events</ArrowLink>
             <ArrowLink href="/activities">View activities</ArrowLink>
-            <ArrowLink href="/people">Meet people</ArrowLink>
-          </div>
+          </>
+        }
+      />
+      <Section tone="white">
+        <Container>
+          <EmptyState
+            title="Coming soon"
+            description="The legacy gallery page was marked Coming soon and contained no published images. Authentic event photography will appear here as it is catalogued — we are not inventing a stock gallery."
+            action={
+              <>
+                <ArrowLink href="/events">Browse events</ArrowLink>
+                <ArrowLink href="/activities">View activities</ArrowLink>
+                <ArrowLink href="/people">Meet people</ArrowLink>
+              </>
+            }
+          />
+          <p className="mx-auto mt-10 max-w-2xl text-center font-instrument text-base leading-relaxed text-muted md:text-lg">
+            Meanwhile, programme visuals live with their source records on Events and Activities pages, and leadership photography appears on People.
+          </p>
         </Container>
       </Section>
     </>

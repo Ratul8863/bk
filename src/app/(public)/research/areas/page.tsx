@@ -16,7 +16,7 @@ import { cn } from '@/lib/utils';
 
 export const metadata = buildPageMetadata(
   'Research Areas',
-  'Fields of inquiry at BK School of Research — education, policy, poverty, climate, wellbeing, and related themes.',
+  'Fields of inquiry at BK School of Research — economics, technology, health, climate, gender, education, and related themes.',
   '/research/areas',
 );
 
@@ -24,10 +24,10 @@ function cleanDescription(text: string) {
   return text.replace(/\s*\(legacy ongoing list:[^)]+\)\.?/gi, '').trim();
 }
 
-export default function ResearchAreasPage() {
-  const areas = getResearchAreas();
-  const projects = getResearchProjects();
-  const publications = getPublications();
+export default async function ResearchAreasPage() {
+  const areas = await getResearchAreas();
+  const projects = await getResearchProjects();
+  const publications = await getPublications();
 
   const rows = areas.map((area, index) => {
     const projectCount = projects.filter((project) =>
@@ -56,8 +56,8 @@ export default function ResearchAreasPage() {
     <>
       <PageHero
         eyebrow="Inquiry"
-        title="Research areas"
-        description="Thirteen fields that organise BKSR’s evidence work — education, policy, poverty, climate, wellbeing, and more."
+        title="Our Focus"
+        description="Eleven fields at the intersection of people, policy, and progress — economics, technology, health, climate, gender, education, and more."
         breadcrumbs={[
           { label: 'Home', href: '/' },
           { label: 'Research', href: '/research' },

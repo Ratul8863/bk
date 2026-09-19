@@ -3,7 +3,8 @@
 import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { ArrowLeft, ArrowRight } from 'lucide-react';
-import { animate, useReducedMotion } from 'motion/react';
+import { animate } from 'motion/react';
+import { useSimplifiedMotion } from '@/hooks/useSimplifiedMotion';
 import { Container } from '@/components/ui/Container';
 import { EditorialHeading } from '@/components/ui/EditorialHeading';
 import { cn } from '@/lib/utils';
@@ -24,12 +25,12 @@ function padIndex(index: number) {
 }
 
 export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
-  const reduceMotion = useReducedMotion();
+  const simplified = useSimplifiedMotion();
   const sectionRef = useRef<HTMLElement>(null);
   const viewportRef = useRef<HTMLDivElement>(null);
   const trackRef = useRef<HTMLUListElement>(null);
   const navRef = useRef<HTMLDivElement>(null);
-  const reducedScrollerRef = useRef<HTMLDivElement>(null);
+  const simplifiedScrollerRef = useRef<HTMLDivElement>(null);
   const metricsRef = useRef({
     viewportWidth: 0,
     trackWidth: 0,
@@ -65,6 +66,7 @@ export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
   };
 
   useEffect(() => {
+    if (simplified) return;
     manualIndexRef.current = manualIndex;
     const target = -Math.min(
       manualIndex * metricsRef.current.step,
@@ -81,10 +83,10 @@ export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
       },
     });
     return () => controls.stop();
-  }, [manualIndex]);
+  }, [manualIndex, simplified]);
 
   useEffect(() => {
-    if (reduceMotion) return;
+    if (simplified) return;
 
     const section = sectionRef.current;
     const viewport = viewportRef.current;
@@ -100,17 +102,14 @@ export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
 
       const p = Math.min(Math.max(progress, 0), 1);
       if (p <= FILL_AT) {
-        // Phase 1: right-parked → full row (01… aligned left, next card may peek).
         const t = p / FILL_AT;
         scrollXRef.current = startX * (1 - t);
       } else {
-        // Phase 2: shift one card — 01 exits left, the peeking card (e.g. 06) comes fully in.
         const t = (p - FILL_AT) / (1 - FILL_AT);
         scrollXRef.current = -revealX * t;
       }
       applyTransform();
 
-      // Arrows work as soon as the row is filled — no need to scroll further.
       const ready = p >= FILL_AT;
       if (buttonsReadyRef.current !== ready) {
         buttonsReadyRef.current = ready;
@@ -118,7 +117,6 @@ export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
       }
       applyNav(ready);
 
-      // Only rewind manual slides if the user scrolls back before the row is filled.
       if (p < FILL_AT && manualIndexRef.current !== 0) {
         manualIndexRef.current = 0;
         manualXRef.current = 0;
@@ -153,11 +151,9 @@ export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
       const viewportWidth = viewport.clientWidth;
       if (viewportWidth < 32) return;
 
-      const trackWidth =
-        lastCard.offsetLeft + lastCard.offsetWidth + padRight;
+      const trackWidth = lastCard.offsetLeft + lastCard.offsetWidth + padRight;
       const maxManual = Math.max(trackWidth - viewportWidth, 0);
       const totalSteps = maxManual <= 1 ? 0 : Math.ceil(maxManual / step);
-      // Scroll already reveals one extra card; arrows handle the rest.
       const buttonSteps = Math.max(0, totalSteps - (maxManual > 0 ? 1 : 0));
 
       const startX = Math.max(
@@ -166,7 +162,6 @@ export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
       );
       const revealX = Math.min(step, maxManual);
 
-      // Pin long enough for: fill row + one full card step, then release.
       const nextPinExtra = Math.round(
         Math.min(
           Math.max(
@@ -213,36 +208,44 @@ export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
       window.cancelAnimationFrame(frame);
       resizeObserver.disconnect();
     };
-  }, [areas.length, reduceMotion]);
+  }, [areas.length, simplified]);
 
   const canPrev = manualIndex > 0;
   const canNext = manualIndex < overflowSteps;
 
   const go = (direction: -1 | 1) => {
-    if (!buttonsReadyRef.current && !reduceMotion) return;
+    if (!buttonsReadyRef.current && !simplified) return;
     setManualIndex((current) =>
       Math.min(Math.max(current + direction, 0), overflowSteps),
     );
   };
 
+  const scrollSimplified = (direction: -1 | 1) => {
+    const scroller = simplifiedScrollerRef.current;
+    if (!scroller) return;
+    const card = scroller.querySelector<HTMLElement>('li');
+    const step = card ? card.offsetWidth + 16 : 280;
+    scroller.scrollBy({ left: direction * step, behavior: 'smooth' });
+  };
+
   if (!areas.length) return null;
 
-  if (reduceMotion) {
+  if (simplified) {
     return (
-      <section className="border-t border-border bg-white py-16 md:py-24">
+      <section className="border-t border-border bg-white py-12 sm:py-16 md:py-24">
         <Container>
           <HeaderCopy />
         </Container>
         <div
-          ref={reducedScrollerRef}
+          ref={simplifiedScrollerRef}
           data-lenis-prevent
-          className="mt-10 overflow-x-auto scroll-smooth px-4 sm:mt-12 sm:px-6 lg:px-8"
+          className="mt-8 overflow-x-auto scroll-smooth px-4 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-12 sm:px-6 lg:px-8 [&::-webkit-scrollbar]:hidden"
         >
-          <ul className="mx-auto flex w-max gap-6 pb-2">
+          <ul className="mx-auto flex w-max snap-x snap-mandatory items-stretch gap-4 pb-2 sm:gap-6">
             {areas.map((area, index) => (
               <li
                 key={area.id}
-                className="w-[min(82vw,17.5rem)] shrink-0 sm:w-77"
+                className="flex w-[min(82vw,17.5rem)] shrink-0 snap-center sm:w-77"
               >
                 <FocusCard area={area} index={index} />
               </li>
@@ -251,26 +254,16 @@ export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
         </div>
         <div
           data-focus-nav
-          className="mt-10 flex items-center justify-center gap-6"
+          className="mt-8 flex items-center justify-center gap-5 sm:mt-10 sm:gap-6"
         >
           <NavButton
             label="Previous focus areas"
-            onClick={() =>
-              reducedScrollerRef.current?.scrollBy({
-                left: -332,
-                behavior: 'smooth',
-              })
-            }
+            onClick={() => scrollSimplified(-1)}
             mirrored
           />
           <NavButton
             label="Next focus areas"
-            onClick={() =>
-              reducedScrollerRef.current?.scrollBy({
-                left: 332,
-                behavior: 'smooth',
-              })
-            }
+            onClick={() => scrollSimplified(1)}
           />
         </div>
       </section>
@@ -315,7 +308,11 @@ export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
           data-overflow-steps={overflowSteps}
           data-manual-index={manualIndex}
           className="mt-10 flex items-center justify-center gap-6"
-          style={{ opacity: 0, transform: 'translateY(18px)', pointerEvents: 'none' }}
+          style={{
+            opacity: 0,
+            transform: 'translateY(18px)',
+            pointerEvents: 'none',
+          }}
           aria-hidden={!buttonsReady}
         >
           <NavButton
@@ -337,13 +334,17 @@ export function FocusAreasCarousel({ areas }: FocusAreasCarouselProps) {
 
 function HeaderCopy() {
   return (
-    <div className="mx-auto max-w-3xl text-center">
-      <EditorialHeading as="h2" size="xl" className="text-balance">
-        Where we focus
+    <div className="mx-auto w-full max-w-6xl text-center">
+      <EditorialHeading
+        as="h2"
+        size="xl"
+        className="text-pretty lg:text-nowrap"
+      >
+        Our Focus
       </EditorialHeading>
-      <p className="mt-4 text-base leading-relaxed text-muted sm:text-lg md:text-xl">
-        Exploring the fields where research, evidence, and insight can create
-        meaningful change.
+      <p className="mx-auto mt-4 max-w-5xl text-sm leading-relaxed text-muted sm:text-lg md:text-xl lg:max-w-none lg:whitespace-nowrap">
+        Advancing evidence-based research at the intersection of people, policy,
+        and progress.
       </p>
     </div>
   );
@@ -359,25 +360,32 @@ function FocusCard({
   return (
     <Link
       href={`/research/areas#${area.slug}`}
-              className="group flex h-full w-full flex-col rounded-[1.5rem] bg-[#e5ebf3] p-5 text-ink transition-colors duration-300 hover:bg-[#dce5f0] sm:rounded-[1.875rem] sm:p-7.5"
+      className="group flex h-full w-full flex-col rounded-[1.5rem] bg-[#e5ebf3] p-5 text-ink transition-colors duration-300 hover:bg-[#dce5f0] sm:rounded-[1.875rem] sm:p-7.5"
     >
       <p className="font-display text-[2.75rem] leading-none tracking-tight sm:text-[4.5rem]">
         {padIndex(index)}
       </p>
-      <div className="mt-6 h-px w-full shrink-0 bg-ink/75 sm:mt-10" aria-hidden />
+      <div
+        className="mt-6 h-px w-full shrink-0 bg-ink/75 sm:mt-10"
+        aria-hidden
+      />
       <div className="mt-6 flex min-h-0 flex-1 flex-col sm:mt-10">
         <h3 className="font-sans text-xl font-semibold leading-tight transition-colors group-hover:text-accent sm:text-[2rem]">
           {area.title}
         </h3>
-        <p className="mt-4 text-sm leading-6 text-ink/80 sm:mt-6 sm:text-base">{area.description}</p>
-        <span className="mt-auto inline-flex w-fit items-center gap-2 rounded-[1.875rem] bg-ink py-2.5 pl-5 pr-4 font-sans text-sm font-medium text-paper transition-colors duration-200 group-hover:bg-accent">
-          View
-          <ArrowRight
-            className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
-            strokeWidth={1.75}
-            aria-hidden
-          />
-        </span>
+        <p className="mt-4 text-sm leading-6 text-ink/80 sm:mt-6 sm:text-base">
+          {area.description}
+        </p>
+        <div className="mt-auto flex pt-6">
+          <span className="inline-flex w-fit items-center gap-2 rounded-full bg-ink py-2.5 pl-5 pr-4 font-sans text-sm font-medium text-paper transition-colors duration-200 group-hover:bg-accent">
+            View
+            <ArrowRight
+              className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5"
+              strokeWidth={1.75}
+              aria-hidden
+            />
+          </span>
+        </div>
       </div>
     </Link>
   );
@@ -401,7 +409,7 @@ function NavButton({
       onClick={onClick}
       disabled={disabled}
       className={cn(
-        'inline-flex items-center justify-center rounded-[1.875rem] p-2.5 transition-colors',
+        'inline-flex items-center justify-center rounded-full p-2.5 transition-colors',
         disabled
           ? 'cursor-not-allowed bg-[#d9dee5] text-white'
           : 'bg-ink text-paper hover:bg-accent',

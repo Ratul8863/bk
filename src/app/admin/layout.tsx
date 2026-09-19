@@ -15,7 +15,7 @@ const adlamDisplay = ADLaM_Display({
 
 export const metadata: Metadata = {
   title: {
-    default: 'BKSR Content Studio',
+    default: 'BKSR CMS',
     template: '%s · BKSR CMS',
   },
   robots: { index: false, follow: false },

@@ -1,15 +1,17 @@
 import Link from 'next/link';
-import { ArrowUpRight } from 'lucide-react';
-import { AtAGlance } from '@/components/home/AtAGlance';
+import { BksrInMedia } from '@/components/home/BksrInMedia';
 import { CollaborationOnRecord } from '@/components/home/CollaborationOnRecord';
 import { FocusAreasCarousel } from '@/components/home/FocusAreasCarousel';
+import { FromTheLibrary } from '@/components/home/FromTheLibrary';
 import { HeroSlideshow } from '@/components/home/HeroSlideshow';
 import { MessageFromExecutive } from '@/components/home/MessageFromExecutive';
+import { NoticesAndEvents } from '@/components/home/NoticesAndEvents';
 import { NoticesNewsCarousel } from '@/components/home/NoticesNewsCarousel';
 import { OurPrograms } from '@/components/home/OurPrograms';
 import { ResearcherSay } from '@/components/home/ResearcherSay';
 import { StatsMarquee } from '@/components/home/StatsMarquee';
 import { TeamMemberCard } from '@/components/home/TeamMemberCard';
+import { WhoWeAre } from '@/components/home/WhoWeAre';
 import { Reveal } from '@/components/motion/Reveal';
 import { Button } from '@/components/ui/Button';
 import { Container } from '@/components/ui/Container';
@@ -20,7 +22,6 @@ import {
   getActivities,
   getEvents,
   getHomepageConfig,
-  getNews,
   getNotices,
   getPeople,
   getPersonById,
@@ -32,31 +33,22 @@ import {
   getSiteSettings,
 } from '@/lib/content/queries';
 import {
-  getPublicationCoverUrl,
   heroSlides,
   prototypeMedia,
 } from '@/lib/content/prototype-media';
 import { peopleDemoRoster } from '@/content/seed/people-demo';
 import {
-  ACTIVITY_ROUTE_META,
-  PUBLICATION_TYPE_LABELS,
-} from '@/lib/public/labels';
+  ABOUT_HEADLINE,
+  ABOUT_OVERVIEW_IDENTITY,
+} from '@/content/about-hub';
+import { withResearchExternalUrls } from '@/lib/content/research-links';
 import { buildPageMetadata } from '@/lib/seo/metadata';
-import { formatDate } from '@/lib/utils';
 
 export const metadata = buildPageMetadata(
   'BK School of Research',
   'Interdisciplinary research shaping evidence-based policy across education, public policy, social development, and related fields.',
   '/',
 );
-
-function publicationBlurb(publication: {
-  abstract?: string | null;
-  citation: string;
-}) {
-  const text = publication.abstract?.trim() || publication.citation;
-  return text.length > 160 ? `${text.slice(0, 157).trim()}…` : text;
-}
 
 function HomeSectionIntro({
   title,
@@ -66,12 +58,16 @@ function HomeSectionIntro({
   children?: React.ReactNode;
 }) {
   return (
-    <Reveal className="mx-auto max-w-3xl text-center">
-      <EditorialHeading as="h2" size="xl" className="text-balance">
+    <Reveal className="mx-auto w-full max-w-6xl text-center">
+      <EditorialHeading
+        as="h2"
+        size="xl"
+        className="text-pretty lg:text-nowrap"
+      >
         {title}
       </EditorialHeading>
       {children ? (
-        <p className="mt-4 text-sm leading-relaxed text-muted sm:mt-4 sm:text-lg md:text-xl">
+        <p className="mx-auto mt-4 max-w-5xl text-sm leading-relaxed text-muted sm:mt-4 sm:text-lg md:text-xl lg:max-w-none lg:whitespace-nowrap">
           {children}
         </p>
       ) : null}
@@ -79,20 +75,24 @@ function HomeSectionIntro({
   );
 }
 
-export default function HomePage() {
-  const settings = getSiteSettings();
-  const homepage = getHomepageConfig();
-  const areas = getResearchAreas();
-  const activities = getActivities();
-  const events = getEvents();
-  const researchProjects = getResearchProjects();
-  const allPublications = getPublications();
-  const archiveNews = getNews();
-  const notices = getNotices();
+export default async function HomePage() {
+  const settings = await getSiteSettings();
+  const homepage = await getHomepageConfig();
+  const areas = await getResearchAreas();
+  const activities = await getActivities();
+  const events = await getEvents();
+  const notices = await getNotices();
+  const researchProjectsRaw = await getResearchProjects();
+  const allPublications = await getPublications();
+  const researchProjects = withResearchExternalUrls(
+    researchProjectsRaw,
+    allPublications,
+  );
+  const opinionPublications = await getPublications({ type: 'opinion' });
 
   const archiveVisuals = [
-    ...archiveNews
-      .map((item) => item.featuredImageUrl)
+    ...opinionPublications
+      .map((item) => item.coverImageUrl)
       .filter((url): url is string => Boolean(url)),
     prototypeMedia.researchField.url,
     prototypeMedia.activityWorkshop.url,
@@ -105,32 +105,49 @@ export default function HomePage() {
 
   const verifiedStats = [...homepage.stats]
     .filter((stat) => stat.verified)
-    .sort((a, b) => a.order - b.order)
-    .slice(0, 4);
+    .sort((a, b) => a.order - b.order);
 
-  const featuredPublications = homepage.featuredPublicationIds
-    .map((id) => getPublicationById(id))
-    .filter((item): item is NonNullable<typeof item> => Boolean(item));
-  const libraryFeatured = featuredPublications[0] ?? allPublications[0];
-  const librarySidebar = (
-    libraryFeatured
-      ? allPublications.filter((item) => item.id !== libraryFeatured.id)
-      : allPublications
-  ).slice(0, 4);
+  const featuredPublications = (
+    await Promise.all(
+      homepage.featuredPublicationIds.map((id) => getPublicationById(id)),
+    )
+  ).filter((item): item is NonNullable<typeof item> => Boolean(item));
+  const libraryPool =
+    featuredPublications.length >= 2
+      ? featuredPublications
+      : [
+          ...featuredPublications,
+          ...allPublications.filter(
+            (item) => !featuredPublications.some((f) => f.id === item.id),
+          ),
+        ];
+  const libraryFeatured = libraryPool.slice(0, 2);
+  const libraryFeaturedIds = new Set(libraryFeatured.map((item) => item.id));
+  const librarySidebar = allPublications
+    .filter((item) => !libraryFeaturedIds.has(item.id))
+    .slice(0, 3);
 
   const featuredProject =
-    homepage.featuredResearchProjectIds
-      .map((id) => getResearchProjectById(id))
+    (
+      await Promise.all(
+        homepage.featuredResearchProjectIds.map((id) =>
+          getResearchProjectById(id),
+        ),
+      )
+    )
+      .map((item) =>
+        item
+          ? withResearchExternalUrls([item], allPublications)[0]
+          : undefined,
+      )
       .find((item): item is NonNullable<typeof item> => Boolean(item)) ??
     researchProjects[0];
 
-  const mediaCoverage = getPublications({ type: 'opinion' });
-  const featuredMedia = mediaCoverage[0];
-  const moreMediaCoverage = mediaCoverage.slice(1, 4);
+  const mediaCoverage = opinionPublications;
 
-  const people = getPeople();
+  const people = await getPeople();
   const director =
-    getPersonById(homepage.directorPersonId) ??
+    (await getPersonById(homepage.directorPersonId)) ??
     people.find((person) => person.category === 'executive-director');
   const directorPhoto =
     director?.photoUrl && !director.photoUrl.includes('/prototype/')
@@ -200,69 +217,87 @@ export default function HomePage() {
     ...teamDemoMembers.slice(publishedTeamMembers.length),
   ].slice(0, 4);
 
-  const eventItems = (
+  const featuredEventPool = (
     homepage.featuredEventIds.length
-      ? homepage.featuredEventIds.map((id) =>
-          events.find((item) => item.id === id),
-        )
+      ? [
+          ...homepage.featuredEventIds.map((id) =>
+            events.find((item) => item.id === id),
+          ),
+          ...events.filter(
+            (item) => !homepage.featuredEventIds.includes(item.id),
+          ),
+        ]
       : events
-  )
-    .filter((item): item is NonNullable<typeof item> => Boolean(item))
-    .slice(0, 3);
+  ).filter((item): item is NonNullable<typeof item> => Boolean(item));
 
-  const collaborationEvent = events.find(
-    (item) => item.id === 'event-spss-beginners',
-  );
+  const eventItems = featuredEventPool.slice(0, 3);
 
-  const serviceRoutes = ACTIVITY_ROUTE_META.filter((item) =>
-    [
-      'capacity-building',
-      'awareness-campaigns',
-      'research-talks',
-      'innovation-showcasing',
-    ].includes(item.routeSlug),
-  );
+  const noticeSlides = notices.slice(0, 3).map((item, index) => ({
+    id: item.id,
+    href: `/notices/${item.slug}`,
+    title: item.title,
+    summary: item.summary,
+    imageUrl:
+      item.featuredImageUrl ??
+      archiveVisuals[index] ??
+      prototypeMedia.heroSeminar.url,
+  }));
 
-  const glanceCards = [
+  const eventSlides = featuredEventPool.slice(0, 3).map((item, index) => ({
+    id: item.id,
+    href: `/events/${item.slug}`,
+    title: item.title,
+    summary: item.summary,
+    imageUrl:
+      item.featuredImageUrl ??
+      archiveVisuals[index] ??
+      prototypeMedia.eventSeminar.url,
+  }));
+
+  const programItems = [
     {
-      href: '/research',
-      label: 'Research',
-      imageSrc: prototypeMedia.researchField.url,
-      imageAlt: prototypeMedia.researchField.alt,
+      href: '/activities/capacity-building',
+      title: 'Capacity Building',
+      summary:
+        'Growing research talent through training, funding, and mentorship.',
+      imageSrc:
+        activities.find((item) => item.type === 'capacity-building')?.imageUrl ??
+        archiveVisuals[0] ??
+        prototypeMedia.activityWorkshop.url,
     },
     {
-      href: '/publications',
-      label: 'Publication',
-      imageSrc: prototypeMedia.knowledgeArchive.url,
-      imageAlt: prototypeMedia.knowledgeArchive.alt,
+      href: '/activities/research-talks',
+      title: 'Policy & Academic Engagement',
+      summary:
+        'Connecting research to policy through dialogue, dissemination, and partnership.',
+      imageSrc:
+        activities.find((item) => item.type === 'research-talk')?.imageUrl ??
+        archiveVisuals[1] ??
+        prototypeMedia.eventSeminar.url,
     },
     {
-      href: '/events',
-      label: 'Events',
-      imageSrc: prototypeMedia.eventSeminar.url,
-      imageAlt: prototypeMedia.eventSeminar.alt,
+      href: '/activities/awareness-campaigns',
+      title: 'Community & Social Impact',
+      summary:
+        'Translating research into outreach and impact for local communities.',
+      imageSrc:
+        activities.find((item) => item.type === 'awareness-campaign')
+          ?.imageUrl ??
+        archiveVisuals[2] ??
+        prototypeMedia.activityWorkshop.url,
     },
   ];
 
-  const noticesNewsSlides = [
-    ...notices.slice(0, 5).map((item, index) => ({
-      id: item.id,
-      href: `/notices/${item.slug}`,
-      title: item.title,
-      kind: 'notice' as const,
-      imageUrl: archiveVisuals[index] ?? archiveVisuals[0],
-    })),
-    ...archiveNews.slice(0, 5).map((item, index) => ({
-      id: item.id,
-      href: `/news/${item.slug}`,
-      title: item.title,
-      kind: 'news' as const,
-      imageUrl:
-        item.featuredImageUrl ??
-        archiveVisuals[index + 2] ??
-        archiveVisuals[0],
-    })),
-  ];
+  const opinionSlides = opinionPublications.slice(0, 3).map((item, index) => ({
+    id: item.id,
+    href: `/publications/${item.slug}`,
+    title: item.title,
+    summary: item.abstract ?? item.citation,
+    imageUrl:
+      item.coverImageUrl ??
+      archiveVisuals[index] ??
+      archiveVisuals[0],
+  }));
 
   const primaryCta =
     homepage.heroCtas.find((cta) => cta.variant === 'primary') ??
@@ -287,7 +322,8 @@ export default function HomePage() {
               BK School of Research
             </h1>
             <p className="mt-4 max-w-xl font-sans text-base leading-relaxed text-paper/80 sm:mt-6 sm:text-lg md:text-xl">
-              Evidence for policy. Reform for progress.
+              {homepage.heroSubtitle?.trim() ||
+                'A Heaven for Inquisitive Minds.'}
             </p>
             <div className="mt-7 flex w-full max-w-md flex-col gap-3 sm:mt-10 sm:max-w-none sm:flex-row">
               {primaryCta ? (
@@ -317,11 +353,62 @@ export default function HomePage() {
 
       <StatsMarquee items={verifiedStats} />
 
+      <Section tone="white" spaced={false} className="py-12 sm:py-14 md:py-16">
+        <Container>
+          <HomeSectionIntro title="Who we are">
+            {ABOUT_HEADLINE}.
+          </HomeSectionIntro>
+          <Reveal>
+            <WhoWeAre
+              foundedYear={settings.foundedYear}
+              motto="Turning evidence into policy, and policy into change."
+              tagline=""
+              identity={ABOUT_OVERVIEW_IDENTITY}
+              featureImageSrc={
+                archiveVisuals[0] ?? prototypeMedia.researchField.url
+              }
+              featureImageAlt="BKSR research and academic work"
+              pillars={[
+                {
+                  id: 'research-publications',
+                  title: 'Research & Publications',
+                  description:
+                    'Evidence-based research, shaping policy and building resilient societies.',
+                  href: '/research',
+                },
+                {
+                  id: 'capacity-building',
+                  title: 'Capacity Building',
+                  description:
+                    'Training, funding, and mentorship — shaping the next generation of scholars.',
+                  href: '/activities/capacity-building',
+                },
+                {
+                  id: 'policy-academic',
+                  title: 'Policy & Academic Engagement',
+                  description:
+                    'Connecting scholars, shaping policy, building global partnerships.',
+                  href: '/activities/research-talks',
+                },
+                {
+                  id: 'community-impact',
+                  title: 'Community & Social Impact',
+                  description:
+                    'Studies in the field, impact in the community.',
+                  href: '/activities/awareness-campaigns',
+                },
+              ]}
+            />
+          </Reveal>
+        </Container>
+      </Section>
+
       {director ? (
-        <Section tone="white">
+        <Section tone="white" className="border-t border-border">
           <Container>
-            <HomeSectionIntro title="Message From Executive">
-              Meet the researchers and contributors behind BKSR’s work.
+            <HomeSectionIntro title="Message from the Executive Director">
+              From mentorship to global impact - a decade of evidence-driven
+              transformation.
             </HomeSectionIntro>
             <Reveal className="mt-12 sm:mt-14">
               <MessageFromExecutive
@@ -332,190 +419,6 @@ export default function HomePage() {
                 profileHref={`/people/${director.slug}`}
               />
             </Reveal>
-          </Container>
-        </Section>
-      ) : null}
-
-      <AtAGlance items={glanceCards} />
-
-      {/* Temporarily hidden — mission / About BKSR strip */}
-      {false && (
-      <Section tone="white" className="border-t border-border">
-        <Container>
-          <Reveal className="mx-auto max-w-4xl text-center">
-            <EditorialHeading
-              as="h2"
-              size="xl"
-              className="mx-auto max-w-[18ch] text-balance sm:max-w-none"
-            >
-              <span className="block">A research organisation for</span>
-              <span className="block">evidence-based policy</span>
-            </EditorialHeading>
-            <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-muted sm:mt-5 sm:text-lg md:text-xl">
-              {settings.mission}
-            </p>
-          </Reveal>
-
-          <div className="mt-12 grid gap-5 sm:mt-14 sm:grid-cols-3 sm:gap-6">
-            {[
-              {
-                src: archiveVisuals[0] ?? prototypeMedia.researchField.url,
-                alt: 'BKSR research in the field',
-              },
-              {
-                src: archiveVisuals[1] ?? prototypeMedia.activityWorkshop.url,
-                alt: 'BKSR training and capacity building',
-              },
-              {
-                src: archiveVisuals[2] ?? prototypeMedia.knowledgeArchive.url,
-                alt: 'BKSR publications and knowledge archive',
-              },
-            ].map((visual) => (
-              <ImageFrame
-                key={visual.src}
-                src={visual.src}
-                alt={visual.alt}
-                aspect="video"
-                sizes="(max-width: 640px) 100vw, 33vw"
-                frameClassName="border-0 !aspect-[557/397] max-w-full bg-surface"
-                className="object-cover"
-              />
-            ))}
-          </div>
-
-          <div className="mt-10 flex justify-center sm:mt-12">
-            <Button href="/about" variant="ink" size="lg">
-              About BKSR
-            </Button>
-          </div>
-        </Container>
-      </Section>
-      )}
-
-      {libraryFeatured ? (
-        <Section tone="white" className="border-t border-border">
-          <Container>
-            <HomeSectionIntro title="From the library">
-              Selected publications and related work from the BKSR archive.
-            </HomeSectionIntro>
-
-            <div className="mt-10 grid min-w-0 gap-8 sm:mt-12 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,22rem)] lg:items-start lg:gap-8 xl:grid-cols-[minmax(0,1.55fr)_minmax(0,24rem)] xl:gap-10">
-              <Link
-                href={`/publications/${libraryFeatured.slug}`}
-                className="group flex min-w-0 flex-col"
-              >
-                <ImageFrame
-                  src={
-                    getPublicationCoverUrl(libraryFeatured) ??
-                    archiveVisuals[0] ??
-                    prototypeMedia.publicationCoverRemittances.url
-                  }
-                  alt=""
-                  aspect="video"
-                  sizes="(max-width: 1024px) 100vw, 55vw"
-                  frameClassName="border-0 max-w-full rounded-[1.5rem]"
-                  className="object-cover object-top"
-                />
-                <p className="mt-5 font-sans text-sm text-muted">
-                  {[
-                    PUBLICATION_TYPE_LABELS[libraryFeatured.type],
-                    libraryFeatured.year,
-                    libraryFeatured.venue,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
-                <h3 className="mt-2 text-balance font-sans text-xl font-semibold leading-snug text-ink transition-colors group-hover:text-accent sm:text-2xl md:text-[1.75rem] md:leading-snug">
-                  {libraryFeatured.title}
-                </h3>
-                <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-ink/75 sm:text-base">
-                  {publicationBlurb(libraryFeatured)}
-                </p>
-                <p className="mt-3 text-sm text-ink/70">
-                  <span className="font-semibold text-ink">Author:</span>{' '}
-                  {libraryFeatured.authors.join(', ')}
-                </p>
-                <span className="mt-5 inline-flex items-center gap-1.5 font-sans text-sm font-semibold text-ink transition-colors group-hover:text-accent">
-                  Read more
-                  <ArrowUpRight
-                    className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                </span>
-              </Link>
-
-              <aside className="flex min-w-0 flex-col overflow-hidden rounded-[1.875rem] bg-[#e5ebf3] p-5 sm:p-6">
-                <div className="min-w-0">
-                  <h3 className="font-sans text-xl font-semibold text-ink sm:text-2xl">
-                    In case you missed it
-                  </h3>
-                  <p className="mt-2 text-sm leading-relaxed text-ink/65">
-                    More selected work from the BKSR publication archive.
-                  </p>
-                </div>
-                <div className="mt-5 border-t border-ink/10" aria-hidden />
-                <ul className="mt-1 flex min-w-0 flex-1 flex-col">
-                  {librarySidebar.map((publication, index) => (
-                    <li
-                      key={publication.id}
-                      className="min-w-0 border-b border-ink/10 py-5 last:border-0 last:pb-0"
-                    >
-                      <Link
-                        href={`/publications/${publication.slug}`}
-                        className="group grid min-w-0 grid-cols-[4.5rem_minmax(0,1fr)] gap-3 sm:grid-cols-[5rem_minmax(0,1fr)] sm:gap-3.5"
-                      >
-                        <ImageFrame
-                          src={
-                            getPublicationCoverUrl(publication) ??
-                            archiveVisuals[index + 1] ??
-                            prototypeMedia.publicationCoverRemittances.url
-                          }
-                          alt=""
-                          aspect="square"
-                          sizes="5rem"
-                          frameClassName="border-0 w-full rounded-[0.875rem]"
-                          className="object-cover"
-                        />
-                        <div className="flex min-w-0 flex-col justify-center gap-1.5">
-                          <p className="truncate font-sans text-[0.75rem] text-ink/60">
-                            {[
-                              PUBLICATION_TYPE_LABELS[publication.type],
-                              publication.year,
-                            ]
-                              .filter(Boolean)
-                              .join(' · ')}
-                          </p>
-                          <p className="line-clamp-2 break-words font-sans text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-accent">
-                            {publication.title}
-                          </p>
-                          <span className="mt-1 inline-flex items-center gap-1 font-sans text-sm font-medium text-ink transition-colors group-hover:text-accent">
-                            Read more
-                            <ArrowUpRight
-                              className="size-3.5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                              strokeWidth={2}
-                              aria-hidden
-                            />
-                          </span>
-                        </div>
-                      </Link>
-                    </li>
-                  ))}
-                </ul>
-              </aside>
-            </div>
-
-            <div className="mt-12 flex justify-center">
-              <Button
-                href="/publications"
-                variant="ink"
-                size="lg"
-                className="rounded-[1.875rem] px-6 font-medium tracking-normal"
-                withArrow
-              >
-                Read publications
-              </Button>
-            </div>
           </Container>
         </Section>
       ) : null}
@@ -564,9 +467,13 @@ export default function HomePage() {
                     {featuredProject.year ? ` · ${featuredProject.year}` : null}
                   </p>
                   <Button
-                    href={`/research/${featuredProject.slug}`}
+                    href={
+                      featuredProject.url?.trim() ||
+                      '/publications/journals'
+                    }
                     variant="ink"
                     size="md"
+                    external={Boolean(featuredProject.url?.trim())}
                   >
                     Read publications
                   </Button>
@@ -577,15 +484,74 @@ export default function HomePage() {
         </Section>
       ) : null}
 
-      <Section tone="white" className="border-t border-border">
+      {libraryFeatured.length ? (
+        <Section tone="white" className="border-t border-border">
+          <Container>
+            <HomeSectionIntro title="Our Research" />
+
+            <FromTheLibrary
+              featured={libraryFeatured}
+              sidebar={librarySidebar}
+              fallbackImages={archiveVisuals}
+            />
+          </Container>
+        </Section>
+      ) : null}
+
+      <OurPrograms items={programItems} />
+
+      {noticeSlides.length || eventSlides.length ? (
+        <Section
+          tone="white"
+          spaced={false}
+          className="border-t border-border py-10 sm:py-12 md:py-14"
+        >
+          <Container>
+            <Reveal className="mx-auto w-full max-w-6xl text-center">
+              <EditorialHeading
+                as="h2"
+                size="lg"
+                className="text-pretty lg:text-nowrap"
+              >
+                Notice and Events
+              </EditorialHeading>
+            </Reveal>
+            <div className="mt-10 sm:mt-12">
+              <NoticesAndEvents
+                notices={noticeSlides}
+                events={eventSlides}
+                fallbackImage={prototypeMedia.heroSeminar.url}
+              />
+            </div>
+          </Container>
+        </Section>
+      ) : null}
+
+      <Section
+        tone="white"
+        spaced={false}
+        className="border-t border-border py-10 sm:py-12 md:py-14"
+      >
         <Container>
-          <HomeSectionIntro title="Meet our team">
-            Meet the researchers and contributors behind BKSR’s work.
+          <HomeSectionIntro title="BKSR in Media">
+            Headlines featuring our work in newspapers, television, and other
+            mass media.
           </HomeSectionIntro>
 
-          <div className="mt-10 flex flex-col items-center gap-6 sm:mt-14 sm:gap-10">
+          <BksrInMedia items={mediaCoverage} />
+        </Container>
+      </Section>
+
+      <Section tone="white" className="border-t border-border">
+        <Container>
+          <HomeSectionIntro title="Meet Our Team">
+            Meet the inquisitive minds turning curiosity into insight, and
+            insight into social transformation.
+          </HomeSectionIntro>
+
+          <div className="mt-10 flex flex-col items-center gap-5 sm:mt-14 sm:gap-10">
             {director ? (
-              <Reveal className="w-full max-w-[18.5rem] sm:w-[calc((100%-1.5rem)/2)] sm:max-w-none lg:w-[calc((100%-4.5rem)/4)]">
+              <Reveal className="w-full max-w-[15.5rem] sm:w-[calc((100%-1.5rem)/2)] sm:max-w-none lg:w-[calc((100%-4.5rem)/4)]">
                 <TeamMemberCard
                   href={`/people/${director.slug}`}
                   name={director.name}
@@ -597,7 +563,7 @@ export default function HomePage() {
             ) : null}
 
             {teamMembers.length ? (
-              <ul className="mx-auto grid w-full max-w-[18.5rem] gap-5 sm:max-w-none sm:grid-cols-2 sm:gap-6 lg:grid-cols-4">
+              <ul className="grid w-full grid-cols-2 gap-3 sm:gap-6 lg:grid-cols-4">
                 {teamMembers.map((item) => (
                   <li key={item.href} className="min-w-0">
                     <TeamMemberCard
@@ -621,77 +587,9 @@ export default function HomePage() {
         </Container>
       </Section>
 
-      <OurPrograms
-        items={serviceRoutes.map((route, index) => {
-          const activity = activities.find((item) => item.type === route.type);
-          return {
-            href: `/activities/${route.routeSlug}`,
-            title: activity?.title ?? route.label,
-            summary: activity?.summary ?? 'Programme details forthcoming.',
-            imageSrc:
-              activity?.imageUrl ??
-              archiveVisuals[index] ??
-              prototypeMedia.activityWorkshop.url,
-          };
-        })}
-      />
-
-      <Section
-        tone="white"
-        className="relative isolate z-10 border-t border-border"
-      >
-        <Container>
-          <HomeSectionIntro title="Collaboration on record">
-            Institutional partners appear here only when documented in the BKSR
-            archive — no invented logos or affiliations.
-          </HomeSectionIntro>
-          <CollaborationOnRecord
-            defaultActiveIndex={1}
-            items={[
-              {
-                id: 'forthcoming-psychology',
-                shortLabel: 'Department of Psychology',
-                title: 'Department of Psychology',
-                description:
-                  'Partnership details will appear here when documented in the BKSR archive.',
-                imageSrc: prototypeMedia.collabPsychology.url,
-              },
-              {
-                id: 'economics-rabindra',
-                shortLabel: 'Department of Economics',
-                title:
-                  'Department of Economics, Rabindra University, Bangladesh',
-                description:
-                  'Joint webinar host for “SPSS for the Beginners” (27 June 2020), with BK School of Research.',
-                imageSrc: prototypeMedia.collabEconomics.url,
-                href: collaborationEvent
-                  ? `/events/${collaborationEvent.slug}`
-                  : undefined,
-              },
-              {
-                id: 'forthcoming-cs',
-                shortLabel: 'Department of Computer Science',
-                title: 'Department of Computer Science',
-                description:
-                  'Partnership details will appear here when documented in the BKSR archive.',
-                imageSrc: prototypeMedia.collabComputerScience.url,
-              },
-              {
-                id: 'forthcoming-env',
-                shortLabel: 'Department of Environmental',
-                title: 'Department of Environmental',
-                description:
-                  'Partnership details will appear here when documented in the BKSR archive.',
-                imageSrc: prototypeMedia.collabEnvironmental.url,
-              },
-            ]}
-          />
-        </Container>
-      </Section>
-
       <ResearcherSay
-        title="What our researcher say"
-        subtitle="Named testimonials will appear here once BKSR publishes attributed researcher statements — we do not invent quotes."
+        title="What Our Researchers Say"
+        subtitle="From early-career researchers to seasoned scholars, discover how mentorship and hands-on experience at BK School of Research fuel their growth and success."
         items={[
           {
             imageSrc: prototypeMedia.researcherSayPortrait1.url,
@@ -728,214 +626,149 @@ export default function HomePage() {
             name: 'Attribution pending',
             role: 'Researcher',
           },
+          {
+            imageSrc: prototypeMedia.teamDemoCarlos.url,
+            quote:
+              '“Statement forthcoming — attributed researcher quotes will appear here when published.”',
+            name: 'Attribution pending',
+            role: 'Researcher',
+          },
+          {
+            imageSrc: prototypeMedia.directorPortrait.url,
+            quote:
+              '“Statement forthcoming — attributed researcher quotes will appear here when published.”',
+            name: 'Attribution pending',
+            role: 'Researcher',
+          },
+          {
+            imageSrc:
+              'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?auto=format&fit=crop&w=640&h=800&q=80',
+            quote:
+              '“Statement forthcoming — attributed researcher quotes will appear here when published.”',
+            name: 'Attribution pending',
+            role: 'Researcher',
+          },
+          {
+            imageSrc:
+              'https://images.unsplash.com/photo-1560250097-0b93528c311a?auto=format&fit=crop&w=640&h=800&q=80',
+            quote:
+              '“Statement forthcoming — attributed researcher quotes will appear here when published.”',
+            name: 'Attribution pending',
+            role: 'Researcher',
+          },
         ]}
       />
 
       {/* Temporarily hidden — Talks & webinars */}
       {false && (
-      <Section tone="white" className="border-t border-border">
-        <Container>
-          <HomeSectionIntro title="Talks & webinars">
-            Documented webinars and public conversations from the BKSR archive.
-          </HomeSectionIntro>
-          <ul className="mt-12 grid gap-5 md:grid-cols-3">
-            {eventItems.map((item, index) => (
-              <li key={item.id}>
-                <Link
-                  href={`/events/${item.slug}`}
-                  className="group flex h-full flex-col border border-ink p-4 transition-colors hover:border-accent"
-                >
-                  <h3 className="min-h-16 font-sans text-lg leading-snug text-ink transition-colors group-hover:text-accent sm:text-xl">
-                    {item.title}
-                  </h3>
-                  <div className="mt-4 flex-1">
-                    <ImageFrame
-                      src={
-                        item.featuredImageUrl?.startsWith('http') ||
-                        item.featuredImageUrl?.startsWith('/')
-                          ? item.featuredImageUrl
-                          : (archiveVisuals[index] ??
-                            prototypeMedia.activityWorkshop.url)
-                      }
-                      alt=""
-                      aspect="video"
-                      sizes="(max-width: 768px) 100vw, 33vw"
-                      frameClassName="border-0"
-                      className="object-cover"
-                    />
-                  </div>
-                </Link>
-              </li>
-            ))}
-          </ul>
-          <div className="mt-10 flex justify-center">
-            <Button href="/events" variant="ink" size="lg">
-              View all talks
-            </Button>
-          </div>
-        </Container>
-      </Section>
+        <Section tone="white" className="border-t border-border">
+          <Container>
+            <HomeSectionIntro title="Talks & webinars">
+              Documented webinars and public conversations from the BKSR
+              archive.
+            </HomeSectionIntro>
+            <ul className="mt-12 grid gap-5 md:grid-cols-3">
+              {eventItems.map((item, index) => (
+                <li key={item.id}>
+                  <Link
+                    href={`/events/${item.slug}`}
+                    className="group flex h-full flex-col border border-ink p-4 transition-colors hover:border-accent"
+                  >
+                    <h3 className="min-h-16 font-sans text-lg leading-snug text-ink transition-colors group-hover:text-accent sm:text-xl">
+                      {item.title}
+                    </h3>
+                    <div className="mt-4 flex-1">
+                      <ImageFrame
+                        src={
+                          item.featuredImageUrl?.startsWith('http') ||
+                          item.featuredImageUrl?.startsWith('/')
+                            ? item.featuredImageUrl
+                            : (archiveVisuals[index] ??
+                              prototypeMedia.activityWorkshop.url)
+                        }
+                        alt=""
+                        aspect="video"
+                        sizes="(max-width: 768px) 100vw, 33vw"
+                        frameClassName="border-0"
+                        className="object-cover"
+                      />
+                    </div>
+                  </Link>
+                </li>
+              ))}
+            </ul>
+            <div className="mt-10 flex justify-center">
+              <Button href="/events" variant="ink" size="lg">
+                View all talks
+              </Button>
+            </div>
+          </Container>
+        </Section>
       )}
 
-      <Section tone="white" className="border-t border-border">
+      <Section
+        tone="white"
+        spaced={false}
+        className="border-t border-border py-10 sm:py-12 md:py-14"
+      >
         <Container>
-          <HomeSectionIntro title="Notices & news">
-            Institutional notices and selected updates from the BKSR archive.
-          </HomeSectionIntro>
-          <div className="mt-12">
+          <HomeSectionIntro title="Opinions" />
+          <div className="mt-8 sm:mt-10">
             <NoticesNewsCarousel
-              slides={noticesNewsSlides}
+              slides={opinionSlides}
               fallbackImage={prototypeMedia.heroSeminar.url}
             />
           </div>
         </Container>
       </Section>
 
-      <Section tone="white" className="border-t border-border">
+      <Section
+        tone="white"
+        className="relative isolate z-10 border-t border-border"
+      >
         <Container>
-          <HomeSectionIntro title="BKSR in media">
-            Press and newspaper commentary from the BKSR archive. Additional
-            clippings will be added when rights-cleared assets are available.
+          <HomeSectionIntro title="Collaboration & Partnerships">
+            Building bridges with institutions, industry, and communities
+            worldwide to advance research that matters.
           </HomeSectionIntro>
-
-          <div className="mt-10 grid min-w-0 gap-8 sm:mt-12 lg:grid-cols-[minmax(0,1.55fr)_minmax(18rem,1fr)] lg:items-start lg:gap-10 xl:gap-14">
-            {featuredMedia ? (
-              <Link
-                href={`/publications/${featuredMedia.slug}`}
-                className="group flex min-w-0 flex-col"
-              >
-                <ImageFrame
-                  src={archiveVisuals[0] ?? prototypeMedia.researchField.url}
-                  alt=""
-                  aspect="video"
-                  sizes="(max-width: 1024px) 100vw, 55vw"
-                  frameClassName="border-0 rounded-[1.5rem]"
-                  className="object-cover"
-                />
-                <p className="mt-5 font-sans text-sm text-muted">
-                  {[
-                    featuredMedia.venue,
-                    featuredMedia.publishedAt
-                      ? formatDate(featuredMedia.publishedAt, 'd MMM yyyy')
-                      : featuredMedia.year,
-                  ]
-                    .filter(Boolean)
-                    .join(' · ')}
-                </p>
-                <h3 className="mt-2 font-sans text-xl font-semibold leading-snug text-ink transition-colors group-hover:text-accent sm:text-2xl md:text-[1.75rem] md:leading-snug">
-                  {featuredMedia.title}
-                </h3>
-                <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-ink/75 sm:text-base">
-                  {publicationBlurb(featuredMedia)}
-                </p>
-                <span className="mt-5 inline-flex items-center gap-1.5 font-sans text-sm font-semibold text-ink transition-colors group-hover:text-accent">
-                  Read more
-                  <ArrowUpRight
-                    className="size-4 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                    strokeWidth={2}
-                    aria-hidden
-                  />
-                </span>
-              </Link>
-            ) : (
-              <ImageFrame
-                src={prototypeMedia.researchField.url}
-                alt=""
-                aspect="video"
-                sizes="55vw"
-                frameClassName="border-0 rounded-[1.5rem]"
-              />
-            )}
-
-            <aside className="flex min-w-0 flex-col overflow-hidden rounded-[1.5rem] bg-[#e5ebf3] p-4 sm:rounded-[1.875rem] sm:p-6 lg:p-7">
-              <div className="min-w-0">
-                <h3 className="font-sans text-xl font-semibold text-ink sm:text-2xl">
-                  Latest coverage
-                </h3>
-                <p className="mt-2 text-sm leading-relaxed text-ink/65">
-                  Recent press mentions and commentary from the archive.
-                </p>
-              </div>
-              <div className="mt-5 border-t border-ink/10" aria-hidden />
-              <ul className="mt-1 flex min-w-0 flex-1 flex-col">
-                {moreMediaCoverage.map((item, index) => (
-                  <li
-                    key={item.id}
-                    className="min-w-0 border-b border-ink/10 py-5 last:border-0 last:pb-0"
-                  >
-                    <Link
-                      href={`/publications/${item.slug}`}
-                      className="group grid min-w-0 grid-cols-[4rem_minmax(0,1fr)] gap-3 sm:grid-cols-[5.25rem_minmax(0,1fr)] sm:gap-4"
-                    >
-                      <ImageFrame
-                        src={
-                          archiveVisuals[index + 1] ??
-                          archiveVisuals[0] ??
-                          prototypeMedia.researchField.url
-                        }
-                        alt=""
-                        aspect="square"
-                        sizes="5.25rem"
-                        frameClassName="border-0 rounded-[0.875rem]"
-                        className="object-cover"
-                      />
-                      <div className="flex min-w-0 flex-col justify-center gap-1.5">
-                        <p className="line-clamp-1 font-sans text-[0.75rem] text-ink/60">
-                          {[item.venue, item.year].filter(Boolean).join(' · ')}
-                        </p>
-                        <p className="line-clamp-2 font-sans text-sm font-semibold leading-snug text-ink transition-colors group-hover:text-accent sm:text-[0.9375rem]">
-                          {item.title}
-                        </p>
-                        <span className="mt-1 inline-flex items-center gap-1 font-sans text-sm font-medium text-ink transition-colors group-hover:text-accent">
-                          Read more
-                          <ArrowUpRight
-                            className="size-3.5 shrink-0 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                            strokeWidth={2}
-                            aria-hidden
-                          />
-                        </span>
-                      </div>
-                    </Link>
-                  </li>
-                ))}
-              </ul>
-            </aside>
-          </div>
-
-          <div className="mt-12 flex justify-center">
-            <Button
-              href="/publications/opinions"
-              variant="ink"
-              size="lg"
-              className="rounded-[1.875rem] px-6 font-medium tracking-normal"
-              withArrow
-            >
-              View all coverage
-            </Button>
-          </div>
-        </Container>
-      </Section>
-
-      <Section tone="white" className="border-t border-border pb-16 md:pb-24">
-        <Container>
-          <div className="overflow-hidden bg-ink px-5 py-12 text-center text-paper sm:px-10 sm:py-20 md:py-24">
-            <EditorialHeading
-              as="h2"
-              size="xl"
-              className="text-paper text-balance"
-            >
-              Start a conversation
-            </EditorialHeading>
-            <p className="mx-auto mt-4 max-w-xl text-base leading-relaxed text-paper/75 sm:text-lg">
-              For collaboration, enquiry, and evidence-led dialogue across
-              education, policy, and society.
-            </p>
-            <div className="mt-8 flex justify-center">
-              <Button href="/contact" variant="onInk" size="lg" className="w-full max-w-xs sm:w-auto">
-                Contact BKSR
-              </Button>
-            </div>
-          </div>
+          <CollaborationOnRecord
+            defaultActiveIndex={0}
+            items={[
+              {
+                id: 'positive-sciences',
+                shortLabel: 'Positive Sciences',
+                title: 'Positive Sciences (France)',
+                description:
+                  'Cross-border collaboration advancing research for good, documented in the BKSR archive.',
+                imageSrc: prototypeMedia.collabPsychology.url,
+              },
+              {
+                id: 'cfep-sri-lanka',
+                shortLabel: 'CFEP',
+                title:
+                  'Ceylon Foundation for Economic Policy Analysis (CFEP), Sri Lanka',
+                description:
+                  'International partnership supporting evidence-based economic policy analysis with BK School of Research.',
+                imageSrc: prototypeMedia.collabEconomics.url,
+              },
+              {
+                id: 'forthcoming-cs',
+                shortLabel: 'Open to partners',
+                title: 'Open to new partnerships',
+                description:
+                  'BKSR remains open to new institutional partnerships that advance research for good.',
+                imageSrc: prototypeMedia.collabComputerScience.url,
+              },
+              {
+                id: 'forthcoming-env',
+                shortLabel: 'Worldwide',
+                title: 'Building bridges worldwide',
+                description:
+                  'Partnership details appear here when documented in the BKSR archive.',
+                imageSrc: prototypeMedia.collabEnvironmental.url,
+              },
+            ]}
+          />
         </Container>
       </Section>
     </>

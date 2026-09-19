@@ -4,6 +4,8 @@ import {
   ArticleReading,
   VacancyAside,
 } from '@/components/editorial/ArticleReading';
+import { getContentDatabase } from '@/lib/cms/get-content-database';
+import { resolveFormForVacancy } from '@/lib/content/registration-forms';
 import { getNoticeBySlug, getNotices } from '@/lib/content/queries';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { formatDate } from '@/lib/utils';
@@ -16,15 +18,15 @@ const NOTICE_TYPE_LABELS: Record<string, string> = {
   general: 'Notice',
 };
 
-export function generateStaticParams() {
-  return getNotices({ includeDrafts: true }).map((item) => ({
+export async function generateStaticParams() {
+  return (await getNotices({ includeDrafts: true })).map((item) => ({
     slug: item.slug,
   }));
 }
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const item = getNoticeBySlug(slug, { includeDrafts: true });
+  const item = await getNoticeBySlug(slug, { includeDrafts: true });
   if (!item) return {};
   return buildPageMetadata(
     item.title,
@@ -35,14 +37,28 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function DetailPage({ params }: Props) {
   const { slug } = await params;
-  const item = getNoticeBySlug(slug);
+  const item = await getNoticeBySlug(slug);
   if (!item) notFound();
 
   const isVacancy = item.noticeType === 'vacancy';
+  const db = await getContentDatabase();
+  const form = isVacancy ? resolveFormForVacancy(db, item) : undefined;
   const applyHref =
-    item.slug === 'job-vacancy'
-      ? 'https://forms.gle/cCDhgnxEt5kHwX1v9'
-      : null;
+    form && form.status === 'published'
+      ? `/forms/${form.slug}`
+      : item.slug === 'job-vacancy'
+        ? 'https://forms.gle/cCDhgnxEt5kHwX1v9'
+        : null;
+
+  const deadlineLabel = item.deadlineAt
+    ? formatDate(item.deadlineAt, 'd MMMM yyyy')
+    : item.slug === 'job-vacancy'
+      ? '20 July 2023 (extended)'
+      : item.slug === 'vacancy-announcement'
+        ? '25 July 2020'
+        : item.slug === 'bk-school-of-research-is-looking-for'
+          ? '15 October 2020'
+          : null;
 
   return (
     <>
@@ -52,6 +68,7 @@ export default async function DetailPage({ params }: Props) {
         description={item.summary}
         breadcrumbs={[
           { label: 'Home', href: '/' },
+          { label: 'News and Events', href: '/news-events' },
           { label: 'Notices', href: '/notices' },
           { label: item.title },
         ]}
@@ -74,15 +91,7 @@ export default async function DetailPage({ params }: Props) {
               applyHref={applyHref}
               email="bksr.bd2015@gmail.com"
               whatsapp="+8801747256047"
-              deadline={
-                item.slug === 'job-vacancy'
-                  ? '20 July 2023 (extended)'
-                  : item.slug === 'vacancy-announcement'
-                    ? '25 July 2020'
-                    : item.slug === 'bk-school-of-research-is-looking-for'
-                      ? '15 October 2020'
-                      : null
-              }
+              deadline={deadlineLabel}
             />
           ) : null
         }

@@ -11,7 +11,8 @@
 .program-card-shell {
   box-sizing: border-box;
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  /* Wider media column → more horizontal image when cards get room */
+  grid-template-columns: 1.2fr 0.8fr;
   align-items: stretch;
   width: 100%;
   gap: calc(1.75px + 0.75px * var(--focus));
@@ -31,9 +32,9 @@
   position: relative;
   overflow: hidden;
   background: #d9d9d9;
-  /* Neighbor ~6.75rem → active min(23rem, 52svh) */
+  /* Neighbor ~6.75rem → active tall center */
   height: calc(
-    6.75rem + (min(23rem, 52svh) - 6.75rem) * var(--focus)
+    6.75rem + (min(22.5rem, 52svh) - 6.75rem) * var(--focus)
   );
 }
 
@@ -46,7 +47,7 @@
   flex-direction: column;
   justify-content: space-between;
   height: calc(
-    6.75rem + (min(23rem, 52svh) - 6.75rem) * var(--focus)
+    6.75rem + (min(22.5rem, 52svh) - 6.75rem) * var(--focus)
   );
   padding: calc(11px + 6px * var(--focus));
   gap: calc(8px + 5px * var(--focus));
@@ -118,6 +119,34 @@
 /* Reduced-motion / static list: always fully expanded */
 .program-wheel-card.is-active {
   --focus: 1;
+}
+
+@media (max-width: 1023px) {
+  /* Stacked mobile list — always fully expanded, no morph math */
+  .program-wheel-card.is-active .program-card-shell {
+    grid-template-columns: minmax(0, 0.95fr) minmax(0, 1.15fr);
+  }
+
+  .program-wheel-card.is-active .program-card-media,
+  .program-wheel-card.is-active .program-card-copy {
+    height: min(11.5rem, 34svh);
+  }
+
+  .program-wheel-card.is-active .program-card-title {
+    font-size: 1.15rem;
+  }
+
+  .program-wheel-card.is-active .program-card-summary {
+    font-size: 0.78rem;
+    -webkit-line-clamp: 3;
+  }
+
+  .program-wheel-card.is-active .program-card-explore {
+    height: 2.5rem;
+    margin-top: 0.25rem;
+    padding: 0.5rem 0.85rem;
+    opacity: 1;
+  }
 }
 
 @media (max-width: 640px) {

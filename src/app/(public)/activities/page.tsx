@@ -1,18 +1,11 @@
-import Link from 'next/link';
 import { PageHero } from '@/components/layout/PageHero';
 import { Container } from '@/components/ui/Container';
 import { Section } from '@/components/ui/Section';
-import { ImageFrame } from '@/components/ui/ImageFrame';
-import {
-  MediaCard,
-  MediaCardAction,
-  MediaCardBody,
-  MediaCardMedia,
-  MediaCardTitle,
-} from '@/components/ui/MediaCard';
-import { getActivities } from '@/lib/content/queries';
-import { buildPageMetadata } from '@/lib/seo/metadata';
+import { ActivitiesHub } from '@/components/public/ActivitiesHub';
+import { pageHeroMedia } from '@/lib/content/page-heroes';
+import { getActivities, getEvents } from '@/lib/content/queries';
 import { ACTIVITY_ROUTE_META } from '@/lib/public/labels';
+import { buildPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = buildPageMetadata(
   'Activities',
@@ -20,62 +13,62 @@ export const metadata = buildPageMetadata(
   '/activities',
 );
 
-const routes = ACTIVITY_ROUTE_META.filter((item) =>
-  [
-    'capacity-building',
-    'awareness-campaigns',
-    'research-talks',
-    'innovation-showcasing',
-  ].includes(item.routeSlug),
-);
+const ROUTE_ORDER = [
+  'capacity-building',
+  'awareness-campaigns',
+  'research-talks',
+  'innovation-showcasing',
+] as const;
 
-export default function ActivitiesPage() {
-  const activities = getActivities();
+export default async function ActivitiesPage() {
+  const activities = await getActivities();
+  const events = await getEvents();
+
+  const programmes = ROUTE_ORDER.map((routeSlug) => {
+    const meta = ACTIVITY_ROUTE_META.find(
+      (item) => item.routeSlug === routeSlug,
+    );
+    if (!meta) return null;
+    const activity = activities.find((item) => item.type === meta.type);
+    if (!activity) return null;
+    return {
+      routeSlug,
+      label: meta.label,
+      activity,
+      href: `/activities/${routeSlug}`,
+    };
+  }).filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  const relatedEventIds = [
+    ...new Set(
+      programmes.flatMap((item) => item.activity.relatedEventIds ?? []),
+    ),
+  ];
+  const relatedEvents = relatedEventIds
+    .map((id) => events.find((event) => event.id === id))
+    .filter((event): event is NonNullable<typeof event> => Boolean(event))
+    .sort((a, b) => b.startAt.localeCompare(a.startAt));
+
   return (
     <>
       <PageHero
         eyebrow="Programmes"
         title="Activities"
-        description="Public programmes that extend BKSR research into training, dialogue, and creative practice."
+        description="Public programmes that extend BKSR research into training, dialogue, campaigns, and creative practice."
+        imageSrc={pageHeroMedia.activities}
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Activities' }]}
       />
-      <Section>
+      <Section
+        tone="white"
+        spaced={false}
+        className="py-10 sm:py-16 md:py-24"
+      >
         <Container>
-          <ul className="grid gap-6 md:grid-cols-2">
-            {routes.map((route) => {
-              const activity = activities.find((item) => item.type === route.type);
-              return (
-                <li key={route.routeSlug}>
-                  <MediaCard href={`/activities/${route.routeSlug}`}>
-                    {activity?.imageUrl ? (
-                      <MediaCardMedia>
-                        <ImageFrame
-                          src={activity.imageUrl}
-                          alt=""
-                          aspect="video"
-                          sizes="(max-width: 768px) 100vw, 50vw"
-                        />
-                      </MediaCardMedia>
-                    ) : null}
-                    <MediaCardBody>
-                      <MediaCardTitle>{route.label}</MediaCardTitle>
-                      <p className="text-sm leading-relaxed text-muted">
-                        {activity?.summary ?? 'Programme details forthcoming.'}
-                      </p>
-                      <MediaCardAction>View programme</MediaCardAction>
-                    </MediaCardBody>
-                  </MediaCard>
-                </li>
-              );
-            })}
-          </ul>
-          <p className="mt-10 text-sm text-muted">
-            Looking for webinars? See also{' '}
-            <Link href="/events" className="text-accent hover:underline">
-              Events
-            </Link>
-            .
-          </p>
+          <ActivitiesHub
+            programmes={programmes}
+            relatedEvents={relatedEvents}
+            fallbackImage={pageHeroMedia.activities}
+          />
         </Container>
       </Section>
     </>

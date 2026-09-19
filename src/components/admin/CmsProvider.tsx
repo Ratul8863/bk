@@ -9,7 +9,7 @@ import {
   useState,
   type ReactNode,
 } from 'react';
-import { contentRepository } from '@/lib/cms/repository';
+import { cmsApi } from '@/lib/cms/client-api';
 import type {
   CollectionEntityMap,
   ContentCollectionKey,
@@ -21,26 +21,34 @@ import type {
 interface CmsContextValue {
   database: ContentDatabase | null;
   ready: boolean;
-  refresh: () => void;
+  mode: 'fs' | 'mongo';
+  apiAuthenticated: boolean;
+  refresh: () => Promise<void>;
+  unlockMongoCms: (secret: string) => Promise<void>;
   createItem: <K extends ContentCollectionKey>(
     collection: K,
     input: Omit<CollectionEntityMap[K], 'id' | 'createdAt' | 'updatedAt'> &
       Partial<Pick<CollectionEntityMap[K], 'id' | 'createdAt' | 'updatedAt'>>,
-  ) => CollectionEntityMap[K];
+  ) => Promise<CollectionEntityMap[K]>;
   updateItem: <K extends ContentCollectionKey>(
     collection: K,
     id: string,
     patch: Partial<CollectionEntityMap[K]>,
-  ) => CollectionEntityMap[K] | undefined;
-  deleteItem: <K extends ContentCollectionKey>(collection: K, id: string) => void;
+  ) => Promise<CollectionEntityMap[K] | undefined>;
+  deleteItem: <K extends ContentCollectionKey>(
+    collection: K,
+    id: string,
+  ) => Promise<void>;
   duplicateItem: <K extends ContentCollectionKey>(
     collection: K,
     id: string,
-  ) => CollectionEntityMap[K] | undefined;
-  saveSiteSettings: (patch: Partial<SiteSettings>) => void;
-  saveHomepage: (patch: Partial<HomepageConfig>) => void;
-  saveNavigation: (patch: Partial<ContentDatabase['navigation']>) => void;
-  resetDemoData: () => void;
+  ) => Promise<CollectionEntityMap[K] | undefined>;
+  saveSiteSettings: (patch: Partial<SiteSettings>) => Promise<void>;
+  saveHomepage: (patch: Partial<HomepageConfig>) => Promise<void>;
+  saveNavigation: (
+    patch: Partial<ContentDatabase['navigation']>,
+  ) => Promise<void>;
+  resetDemoData: () => Promise<void>;
 }
 
 const CmsContext = createContext<CmsContextValue | null>(null);
@@ -48,58 +56,100 @@ const CmsContext = createContext<CmsContextValue | null>(null);
 export function CmsProvider({ children }: { children: ReactNode }) {
   const [database, setDatabase] = useState<ContentDatabase | null>(null);
   const [ready, setReady] = useState(false);
+  const [apiAuthenticated, setApiAuthenticated] = useState(false);
+  const [mode, setMode] = useState<'fs' | 'mongo'>('fs');
 
-  const refresh = useCallback(() => {
-    setDatabase(contentRepository.getDatabase());
+  const refresh = useCallback(async () => {
+    try {
+      const [session, health] = await Promise.all([
+        cmsApi.getSession(),
+        cmsApi.health().catch(() => null),
+      ]);
+      setApiAuthenticated(session.authenticated);
+      if (health?.driver === 'mongo' || health?.mode === 'mongo') {
+        setMode('mongo');
+      } else {
+        setMode('fs');
+      }
+
+      if (!session.authenticated) {
+        setDatabase(null);
+        return;
+      }
+
+      const db = await cmsApi.getDatabase();
+      setDatabase(db);
+    } catch {
+      setApiAuthenticated(false);
+      setDatabase(null);
+    }
   }, []);
 
   useEffect(() => {
-    refresh();
-    setReady(true);
+    void refresh().finally(() => setReady(true));
   }, [refresh]);
+
+  const unlockMongoCms = useCallback(
+    async (secret: string) => {
+      await cmsApi.login(secret);
+      setApiAuthenticated(true);
+      await refresh();
+    },
+    [refresh],
+  );
 
   const value = useMemo<CmsContextValue>(
     () => ({
       database,
       ready,
+      mode,
+      apiAuthenticated,
       refresh,
-      createItem: (collection, input) => {
-        const { item } = contentRepository.create(collection, input);
-        refresh();
+      unlockMongoCms,
+      createItem: async (collection, input) => {
+        const item = await cmsApi.create(collection, input);
+        await refresh();
         return item;
       },
-      updateItem: (collection, id, patch) => {
-        const { item } = contentRepository.update(collection, id, patch);
-        refresh();
+      updateItem: async (collection, id, patch) => {
+        const item = await cmsApi.update(collection, id, patch);
+        await refresh();
         return item;
       },
-      deleteItem: (collection, id) => {
-        contentRepository.remove(collection, id);
-        refresh();
+      deleteItem: async (collection, id) => {
+        await cmsApi.remove(collection, id);
+        await refresh();
       },
-      duplicateItem: (collection, id) => {
-        const { item } = contentRepository.duplicate(collection, id);
-        refresh();
+      duplicateItem: async (collection, id) => {
+        const item = await cmsApi.duplicate(collection, id);
+        await refresh();
         return item;
       },
-      saveSiteSettings: (patch) => {
-        contentRepository.updateSiteSettings(patch);
-        refresh();
+      saveSiteSettings: async (patch) => {
+        await cmsApi.updateSiteSettings(patch);
+        await refresh();
       },
-      saveHomepage: (patch) => {
-        contentRepository.updateHomepage(patch);
-        refresh();
+      saveHomepage: async (patch) => {
+        await cmsApi.updateHomepage(patch);
+        await refresh();
       },
-      saveNavigation: (patch) => {
-        contentRepository.updateNavigation(patch);
-        refresh();
+      saveNavigation: async (patch) => {
+        await cmsApi.updateNavigation(patch);
+        await refresh();
       },
-      resetDemoData: () => {
-        contentRepository.resetDatabase();
-        refresh();
+      resetDemoData: async () => {
+        await cmsApi.seed(true);
+        await refresh();
       },
     }),
-    [database, ready, refresh],
+    [
+      database,
+      ready,
+      mode,
+      apiAuthenticated,
+      refresh,
+      unlockMongoCms,
+    ],
   );
 
   return <CmsContext.Provider value={value}>{children}</CmsContext.Provider>;

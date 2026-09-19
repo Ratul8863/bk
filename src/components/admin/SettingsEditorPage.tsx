@@ -2,14 +2,19 @@
 
 import { useEffect, useState, type ReactNode } from 'react';
 import type { SiteSettings } from '@/types/content';
+import {
+  AdminPageHeader,
+  AdminPanel,
+  AdminPrimaryButton,
+} from './AdminUI';
 import { useCms } from './CmsProvider';
 
-type SettingsMode = 'all' | 'contact' | 'social' | 'seo';
+type SettingsMode = 'all' | 'contact' | 'social';
 
 export function SettingsEditorPage({
   mode = 'all',
-  title = 'Site Settings',
-  description = 'Organization identity, contact details, social links, and default SEO.',
+  title = 'Organisation profile',
+  description = 'Organisation name, mission, vision, and contact details shown on the public site.',
 }: {
   mode?: SettingsMode;
   title?: string;
@@ -24,11 +29,11 @@ export function SettingsEditorPage({
   }, [database]);
 
   if (!ready || !form) {
-    return <p className="text-sm text-[#68727D]">Loading settings…</p>;
+    return <p className="text-sm text-[#5B6B7C]">Loading settings…</p>;
   }
 
-  const save = () => {
-    saveSiteSettings(form);
+  const save = async () => {
+    await saveSiteSettings(form);
     setMessage('Settings saved');
     window.setTimeout(() => setMessage(null), 2000);
   };
@@ -36,30 +41,26 @@ export function SettingsEditorPage({
   const showOrg = mode === 'all';
   const showContact = mode === 'all' || mode === 'contact';
   const showSocial = mode === 'all' || mode === 'social';
-  const showSeo = mode === 'all' || mode === 'seo';
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-[family-name:var(--font-admin-display)] text-2xl text-[#0D2745]">
-            {title}
-          </h1>
-          <p className="mt-1 text-sm text-[#68727D]">{description}</p>
-        </div>
-        <div className="flex items-center gap-2">
-          {message ? (
-            <span className="text-xs font-medium text-[#173B6C]">{message}</span>
-          ) : null}
-          <button
-            type="button"
-            onClick={save}
-            className="rounded-lg bg-[#173B6C] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#0D2745]"
-          >
-            Save settings
-          </button>
-        </div>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        eyebrow="Organisation"
+        title={title}
+        description={description}
+        action={
+          <>
+            {message ? (
+              <span className="text-xs font-semibold text-[#173B6C]">
+                {message}
+              </span>
+            ) : null}
+            <AdminPrimaryButton onClick={() => void save()}>
+              Save settings
+            </AdminPrimaryButton>
+          </>
+        }
+      />
 
       <div className="grid max-w-3xl gap-6">
         {showOrg ? (
@@ -239,67 +240,6 @@ export function SettingsEditorPage({
             ))}
           </Section>
         ) : null}
-
-        {showSeo ? (
-          <Section title="Default SEO">
-            <Field
-              label="Default title"
-              value={form.defaultSeo.title}
-              onChange={(v) =>
-                setForm({
-                  ...form,
-                  defaultSeo: { ...form.defaultSeo, title: v },
-                })
-              }
-            />
-            <TextArea
-              label="Default description"
-              value={form.defaultSeo.description}
-              onChange={(v) =>
-                setForm({
-                  ...form,
-                  defaultSeo: { ...form.defaultSeo, description: v },
-                })
-              }
-            />
-            <Field
-              label="Keywords"
-              value={(form.defaultSeo.keywords ?? []).join(', ')}
-              onChange={(v) =>
-                setForm({
-                  ...form,
-                  defaultSeo: {
-                    ...form.defaultSeo,
-                    keywords: v
-                      .split(',')
-                      .map((s) => s.trim())
-                      .filter(Boolean),
-                  },
-                })
-              }
-            />
-            <Field
-              label="OG image URL"
-              value={form.defaultSeo.ogImage ?? ''}
-              onChange={(v) =>
-                setForm({
-                  ...form,
-                  defaultSeo: { ...form.defaultSeo, ogImage: v },
-                })
-              }
-            />
-            <Field
-              label="Canonical path"
-              value={form.defaultSeo.canonicalPath ?? ''}
-              onChange={(v) =>
-                setForm({
-                  ...form,
-                  defaultSeo: { ...form.defaultSeo, canonicalPath: v },
-                })
-              }
-            />
-          </Section>
-        ) : null}
       </div>
     </div>
   );
@@ -313,10 +253,10 @@ function Section({
   children: ReactNode;
 }) {
   return (
-    <section className="space-y-3 rounded-xl border border-[#D9DEE5] bg-[#F8F7F3] p-4 sm:p-5">
-      <h2 className="text-sm font-semibold text-[#0D2745]">{title}</h2>
+    <AdminPanel className="space-y-3 p-4 sm:p-5">
+      <h2 className="text-sm font-semibold text-[#0B1F36]">{title}</h2>
       <div className="grid gap-3">{children}</div>
-    </section>
+    </AdminPanel>
   );
 }
 
@@ -331,11 +271,11 @@ function Field({
 }) {
   return (
     <label className="block space-y-1.5 text-sm">
-      <span className="font-medium text-[#0D2745]">{label}</span>
+      <span className="font-medium text-[#0B1F36]">{label}</span>
       <input
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full rounded-lg border border-[#D9DEE5] bg-white px-3 py-2 outline-none focus:border-[#173B6C]"
+        className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 outline-none focus:border-[#0B1F36] focus:bg-white"
       />
     </label>
   );
@@ -352,12 +292,12 @@ function TextArea({
 }) {
   return (
     <label className="block space-y-1.5 text-sm">
-      <span className="font-medium text-[#0D2745]">{label}</span>
+      <span className="font-medium text-[#0B1F36]">{label}</span>
       <textarea
         value={value}
         onChange={(e) => onChange(e.target.value)}
         rows={4}
-        className="w-full rounded-lg border border-[#D9DEE5] bg-white px-3 py-2 outline-none focus:border-[#173B6C]"
+        className="w-full rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2.5 outline-none focus:border-[#0B1F36] focus:bg-white"
       />
     </label>
   );

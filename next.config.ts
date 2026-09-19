@@ -2,7 +2,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   images: {
+    // Allow quality={100} for brand/critical assets (Next defaults to [75] only).
+    qualities: [75, 100],
+    imageSizes: [16, 32, 48, 64, 96, 128, 256, 384, 512, 640],
     remotePatterns: [
+      {
+        protocol: "https",
+        hostname: "res.cloudinary.com",
+        pathname: "/**",
+      },
       {
         protocol: "https",
         hostname: "blogger.googleusercontent.com",
@@ -15,11 +23,6 @@ const nextConfig: NextConfig = {
     ],
   },
   redirects: async () => [
-    {
-      source: "/news-events",
-      destination: "/news",
-      permanent: true,
-    },
     {
       source: "/activities/awareness-campaign",
       destination: "/activities/awareness-campaigns",

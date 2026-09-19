@@ -4,14 +4,15 @@ export const siteSettings: SiteSettings = {
   id: 'site-settings',
   organizationName: 'BK School of Research',
   organizationShortName: 'BKSR',
-  tagline: 'A heaven for inquisitive minds',
+  tagline: 'Turning evidence into policy, and policy into change.',
   positioningStatement:
-    'Shaping Evidence-Based Policy for a Changing Global Landscape',
-  motto: 'Research, Reformation and Development',
+    'Advancing Knowledge, Shaping Policy, Transforming Societies',
+  motto: 'Advancing Knowledge, Shaping Policy, Transforming Societies',
   mission:
-    'The mission of BK School of Research is to do research on social issues, educate and train up people, and build awareness among people.',
+    'To pursue innovative evidence-based research, empower young researchers through training and mentorship, bridge research and action, forge partnerships across borders, and carry knowledge beyond academia into policy and public conversation.',
   vision:
-    'The vision of BK School of Research is to contribute to making a green, peaceful, prosperous, non-discriminating, and non-depriving world.',
+    'To be a globally recognized center of research excellence, empowering young researchers across diverse fields to generate evidence-based knowledge, shape policy, and drive lasting social impact.',
+
   address: {
     line1: 'Shahjadpur',
     city: 'Shahjadpur',
@@ -39,7 +40,8 @@ export const siteSettings: SiteSettings = {
   defaultSeo: {
     title: 'BK School of Research',
     description:
-      'BK School of Research (BKSR) is an interdisciplinary research organization shaping evidence-based policy through rigorous research in education, public policy, social development, health, and related fields.',
+      'BK School of Research (BKSR) generates evidence-based knowledge, shapes policy, and drives lasting social impact across Arts and Humanities, Social Sciences, Business and Economics, and Public Health.',
+
     keywords: [
       'BK School of Research',
       'BKSR',

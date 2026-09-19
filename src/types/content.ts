@@ -130,6 +130,13 @@ export interface Page extends ContentBase {
   originalLegacyUrl?: string;
 }
 
+export interface PersonSocialLink {
+  label: string;
+  url: string;
+}
+
+export type PersonClaimStatus = 'unclaimed' | 'claimed';
+
 export interface Person extends ContentBase {
   name: string;
   role: string;
@@ -137,14 +144,115 @@ export interface Person extends ContentBase {
   affiliation?: string;
   bio: string;
   shortBio?: string;
+  /** Signup allowlist — required for account claim */
   email?: string;
   phone?: string;
   photoId?: string | null;
   photoUrl?: string | null;
   researchInterests?: string[];
+  socialLinks?: PersonSocialLink[];
+  /** Set when a member Account claims this profile */
+  accountId?: string | null;
+  /** Derived convenience for admin badges; prefer deriving from accountId */
+  claimStatus?: PersonClaimStatus;
+  /** Public membership verification code, e.g. BKSR-00001M */
+  verificationCode?: string | null;
+  /** Current appointment season snapshot, e.g. 2025-2026 */
+  appointmentYear?: string | null;
   order?: number;
   legacyRoleNote?: string;
   originalLegacyUrl?: string;
+}
+
+/** Year-based official role / appointment (BKSR-adapted committee history) */
+export interface RoleAssignment {
+  id: string;
+  personId: string;
+  role: string;
+  /** Season label, e.g. 2025-2026 */
+  year: string;
+  order?: number;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type JoinApplicationStatus = 'pending' | 'approved' | 'rejected';
+
+/** What the applicant wants to join as */
+export type JoinInterestTrack =
+  | 'research-team'
+  | 'administrative-team'
+  | 'distinguished-fellow'
+  | 'other';
+
+export interface JoinApplication {
+  id: string;
+  name: string;
+  email: string;
+  phone?: string;
+  affiliation?: string;
+  /** Current job / study title */
+  currentRole?: string;
+  /** Preferred committee section after approval */
+  interestTrack?: JoinInterestTrack;
+  researchInterests?: string;
+  portfolioUrl?: string;
+  city?: string;
+  /** Motivation / full application note */
+  message: string;
+  /** Full dynamic answers from the CMS join form */
+  answers?: Record<string, string | number | boolean>;
+  status: JoinApplicationStatus;
+  personId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt?: string | null;
+}
+
+export interface Achievement extends ContentBase {
+  title: string;
+  description?: string;
+}
+
+export interface AchievementAssignment {
+  id: string;
+  achievementId: string;
+  personId: string;
+  certificateCode?: string | null;
+  notes?: string;
+  assignedAt: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+/** Member-added (unverified) profile achievements */
+export interface MemberAchievement {
+  id: string;
+  personId: string;
+  title: string;
+  description?: string;
+  year?: string;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type PersonLinkEntityType =
+  | 'event'
+  | 'research'
+  | 'publication'
+  | 'activity';
+
+/** Junction: Person ↔ Event / Research / Publication / Activity */
+export interface PersonContentLink {
+  id: string;
+  personId: string;
+  entityType: PersonLinkEntityType;
+  entityId: string;
+  /** e.g. speaker, moderator, author, lead, organizer, contributor */
+  role: string;
+  order?: number;
+  createdAt: string;
+  updatedAt: string;
 }
 
 export interface ResearchArea extends ContentBase {
@@ -170,6 +278,8 @@ export interface ResearchProject extends ContentBase {
   themeCount?: number;
   /** Optional feature visual (may be prototype media) */
   featuredImageUrl?: string | null;
+  /** External journal / DOI / attached source — listing clicks open this, not an internal detail page */
+  url?: string | null;
   originalLegacyUrl?: string;
 }
 
@@ -229,11 +339,94 @@ export interface Event extends ContentBase {
   location?: string;
   isOnline?: boolean;
   registrationUrl?: string | null;
+  /**
+   * In-site registration form id (shared or dedicated).
+   * Takes priority over a dedicated form whose entityId matches this event.
+   */
+  registrationFormId?: string | null;
   /** YouTube / archive recording when available */
   recordingUrl?: string | null;
   featuredImageUrl?: string | null;
   speakers?: string[];
   originalLegacyUrl?: string;
+}
+
+export type RegistrationFieldType =
+  | 'text'
+  | 'textarea'
+  | 'email'
+  | 'phone'
+  | 'number'
+  | 'dropdown'
+  | 'radio'
+  | 'checkbox';
+
+/**
+ * `join` = sitewide /join application form.
+ * `event` = event registration (dedicated or shared).
+ * `vacancy` = Career / vacancy application (dedicated or shared).
+ */
+export type RegistrationFormEntityType =
+  | 'event'
+  | 'activity'
+  | 'join'
+  | 'vacancy';
+
+/** dedicated = one entity; shared = reusable across many via *FormId pointers */
+export type RegistrationFormLinkMode = 'dedicated' | 'shared';
+
+export type RegistrationEntryStatus =
+  | 'submitted'
+  | 'approved'
+  | 'rejected';
+
+export interface RegistrationFormField {
+  key: string;
+  label: string;
+  type: RegistrationFieldType;
+  required?: boolean;
+  options?: string[];
+  order: number;
+  placeholder?: string;
+}
+
+/** Dynamic registration / application form (events, vacancies, or /join) */
+export interface RegistrationForm {
+  id: string;
+  slug: string;
+  title: string;
+  description?: string;
+  entityType: RegistrationFormEntityType;
+  /**
+   * Dedicated: event/vacancy/activity id (or `site` for join).
+   * Shared: use SHARED_FORM_ENTITY_ID (`shared`).
+   */
+  entityId: string;
+  /** Defaults to dedicated when omitted (legacy forms). */
+  linkMode?: RegistrationFormLinkMode;
+  fields: RegistrationFormField[];
+  isOpen: boolean;
+  requiresApproval: boolean;
+  maxSubmissions?: number | null;
+  closedMessage?: string;
+  successMessage?: string;
+  status: ContentStatus;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface RegistrationEntry {
+  id: string;
+  formId: string;
+  formSlug: string;
+  data: Record<string, string | number | boolean>;
+  status: RegistrationEntryStatus;
+  /** Normalized email when the form includes an email field */
+  email?: string | null;
+  createdAt: string;
+  updatedAt: string;
+  reviewedAt?: string | null;
+  reviewedBy?: string | null;
 }
 
 export interface Notice extends ContentBase {
@@ -242,6 +435,11 @@ export interface Notice extends ContentBase {
   body: string;
   noticeType: NoticeType;
   deadlineAt?: string | null;
+  /**
+   * In-site application form for vacancy notices (Career at BKSR).
+   * Shared or dedicated vacancy forms.
+   */
+  applicationFormId?: string | null;
   featuredImageUrl?: string | null;
   originalLegacyUrl?: string;
   language?: string;
@@ -355,7 +553,15 @@ export type ContentCollectionKey =
   | 'resources'
   | 'galleryAlbums'
   | 'galleryImages'
-  | 'media';
+  | 'media'
+  | 'personContentLinks'
+  | 'registrationForms'
+  | 'registrationEntries'
+  | 'roleAssignments'
+  | 'joinApplications'
+  | 'achievements'
+  | 'achievementAssignments'
+  | 'memberAchievements';
 
 export interface ContentDatabase {
   version: number;
@@ -379,6 +585,14 @@ export interface ContentDatabase {
   galleryAlbums: GalleryAlbum[];
   galleryImages: GalleryImage[];
   media: MediaAsset[];
+  personContentLinks: PersonContentLink[];
+  registrationForms: RegistrationForm[];
+  registrationEntries: RegistrationEntry[];
+  roleAssignments: RoleAssignment[];
+  joinApplications: JoinApplication[];
+  achievements: Achievement[];
+  achievementAssignments: AchievementAssignment[];
+  memberAchievements: MemberAchievement[];
 }
 
 export type CollectionEntityMap = {
@@ -395,4 +609,12 @@ export type CollectionEntityMap = {
   galleryAlbums: GalleryAlbum;
   galleryImages: GalleryImage;
   media: MediaAsset;
+  personContentLinks: PersonContentLink;
+  registrationForms: RegistrationForm;
+  registrationEntries: RegistrationEntry;
+  roleAssignments: RoleAssignment;
+  joinApplications: JoinApplication;
+  achievements: Achievement;
+  achievementAssignments: AchievementAssignment;
+  memberAchievements: MemberAchievement;
 };

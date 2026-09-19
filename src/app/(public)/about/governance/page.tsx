@@ -1,38 +1,18 @@
 import { notFound } from 'next/navigation';
-import { PageHero } from '@/components/layout/PageHero';
-import { Container } from '@/components/ui/Container';
-import { Section } from '@/components/ui/Section';
-import { RichText } from '@/components/ui/RichText';
+import { AboutSubpageView } from '@/components/public/AboutSubpageView';
 import { getPageBySlug } from '@/lib/content/queries';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 
 const SLUG = 'governance';
 
-export function generateMetadata() {
-  const page = getPageBySlug(SLUG, { includeDrafts: true });
+export async function generateMetadata() {
+  const page = await getPageBySlug(SLUG, { includeDrafts: true });
   if (!page) return {};
   return buildPageMetadata(page.title, page.excerpt ?? page.title, `/about/${SLUG}`);
 }
 
-export default function AboutSubpage() {
-  const page = getPageBySlug(SLUG, { includeDrafts: true });
+export default async function AboutSubpage() {
+  const page = await getPageBySlug(SLUG, { includeDrafts: true });
   if (!page) notFound();
-  return (
-    <>
-      <PageHero
-        title={page.title}
-        description={page.excerpt}
-        breadcrumbs={[
-          { label: 'Home', href: '/' },
-          { label: 'About', href: '/about' },
-          { label: page.title },
-        ]}
-      />
-      <Section>
-        <Container narrow>
-          <RichText content={page.body} />
-        </Container>
-      </Section>
-    </>
-  );
+  return <AboutSubpageView page={page} slug={SLUG} />;
 }

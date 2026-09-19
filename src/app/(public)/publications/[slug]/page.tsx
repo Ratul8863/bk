@@ -13,22 +13,24 @@ import {
   getPublications,
   getResearchAreas,
   getResearchProjectById,
+  getLinkedPeopleForEntity,
 } from '@/lib/content/queries';
 import { getPublicationCoverUrl } from '@/lib/content/prototype-media';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { PUBLICATION_TYPE_LABELS } from '@/lib/public/labels';
+import { InvolvedPeople } from '@/components/editorial/InvolvedPeople';
 
 type Props = { params: Promise<{ slug: string }> };
 
-export function generateStaticParams() {
-  return getPublications({ includeDrafts: true }).map((item) => ({
+export async function generateStaticParams() {
+  return (await getPublications({ includeDrafts: true })).map((item) => ({
     slug: item.slug,
   }));
 }
 
 export async function generateMetadata({ params }: Props) {
   const { slug } = await params;
-  const item = getPublicationBySlug(slug, { includeDrafts: true });
+  const item = await getPublicationBySlug(slug, { includeDrafts: true });
   if (!item) return {};
   return buildPageMetadata(
     item.title,
@@ -39,16 +41,27 @@ export async function generateMetadata({ params }: Props) {
 
 export default async function PublicationPage({ params }: Props) {
   const { slug } = await params;
-  const item = getPublicationBySlug(slug);
+  const item = await getPublicationBySlug(slug);
   if (!item) notFound();
 
-  const areas = getResearchAreas().filter((area) =>
+  const areas = (await getResearchAreas()).filter((area) =>
     (item.areaIds ?? []).includes(area.id),
   );
-  const project = item.projectId
-    ? getResearchProjectById(item.projectId)
+  const projectRaw = item.projectId
+    ? await getResearchProjectById(item.projectId)
     : null;
-  const related = getPublications()
+  const project = projectRaw
+    ? {
+        ...projectRaw,
+        url:
+          projectRaw.url?.trim() ||
+          item.url?.trim() ||
+          (item.doi
+            ? `https://doi.org/${item.doi.replace(/^https?:\/\/(dx\.)?doi\.org\//i, '')}`
+            : null),
+      }
+    : null;
+  const related = (await getPublications())
     .filter(
       (pub) =>
         pub.id !== item.id &&
@@ -176,6 +189,12 @@ export default async function PublicationPage({ params }: Props) {
                   ))}
                 </ul>
               </div>
+              <InvolvedPeople
+                entityType="publication"
+                entityId={item.id}
+                initialPeople={await getLinkedPeopleForEntity('publication', item.id)}
+                title="BKSR people"
+              />
               {areas.length ? (
                 <div>
                   <p className="font-sans text-xs font-semibold uppercase tracking-[0.14em] text-muted">
@@ -200,12 +219,18 @@ export default async function PublicationPage({ params }: Props) {
                   <p className="font-sans text-xs font-semibold uppercase tracking-[0.14em] text-muted">
                     Related research
                   </p>
-                  <Link
-                    href={`/research/${project.slug}`}
-                    className="mt-2 block text-sm text-accent hover:underline"
-                  >
-                    {project.title}
-                  </Link>
+                  {project.url?.trim() ? (
+                    <a
+                      href={project.url.trim()}
+                      className="mt-2 block text-sm text-accent hover:underline"
+                      target="_blank"
+                      rel="noopener noreferrer"
+                    >
+                      {project.title}
+                    </a>
+                  ) : (
+                    <p className="mt-2 text-sm text-body">{project.title}</p>
+                  )}
                 </div>
               ) : null}
               {item.url ? (

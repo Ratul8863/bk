@@ -82,7 +82,7 @@ Current seed has no collision (`bezon-kumar` ≠ reserved set). Architecturally 
 
 | From | To |
 |------|----|
-| `/news-events` | `/news` |
+| `/news-events` | Hub — Notices + Events |
 | `/activities/awareness-campaign` | `/activities/awareness-campaigns` |
 | `/activities/research-talk` | `/activities/research-talks` |
 

@@ -2,162 +2,203 @@ import type { ResearchArea } from '@/types/content';
 
 const ts = {
   createdAt: '2016-12-01T00:00:00.000Z',
-  updatedAt: '2026-08-30T00:00:00.000Z',
+  updatedAt: '2026-09-17T00:00:00.000Z',
   publishedAt: '2016-12-01T00:00:00.000Z',
 };
 
 export const researchAreas: ResearchArea[] = [
   {
-    id: 'area-education',
-    slug: 'education',
+    id: 'area-economics-sustainability',
+    slug: 'economics-and-sustainability',
     status: 'published',
     ...ts,
-    title: 'Education',
-    shortDescription: 'Learning systems, academic performance, and education strategy.',
+    title: 'Economics and Sustainability',
+    shortDescription:
+      'Advancing inclusive growth through sustainable economic development.',
     description:
-      'Research on education systems, student academic performance, information literacy, and strategies that improve learning outcomes in Bangladesh and beyond.',
+      'Advancing inclusive growth through sustainable economic development.',
     order: 1,
     seo: {
-      title: 'Education Research | BKSR',
-      description: 'BK School of Research work on education, literacy, and academic performance.',
-      canonicalPath: '/research/areas/education',
+      title: 'Economics and Sustainability | BKSR',
+      description:
+        'Inclusive growth and sustainable economic development research at BK School of Research.',
+      canonicalPath: '/research/areas/economics-and-sustainability',
     },
   },
   {
-    id: 'area-public-policy',
-    slug: 'public-policy',
+    id: 'area-business-technology',
+    slug: 'business-and-technology',
     status: 'published',
     ...ts,
-    title: 'Public Policy',
-    shortDescription: 'Evidence for governance, institutions, and policy design.',
+    title: 'Business and Technology',
+    shortDescription:
+      'Driving innovation at the intersection of enterprise and technology.',
     description:
-      'Work linking research evidence to governance, public administration, and policy choices that affect livelihoods and institutions.',
+      'Driving innovation at the intersection of enterprise and technology.',
     order: 2,
     seo: {
-      title: 'Public Policy Research | BKSR',
-      description: 'Evidence-based public policy research from BK School of Research.',
-      canonicalPath: '/research/areas/public-policy',
+      title: 'Business and Technology | BKSR',
+      description:
+        'Enterprise and technology research at BK School of Research.',
+      canonicalPath: '/research/areas/business-and-technology',
     },
   },
   {
-    id: 'area-social-development',
-    slug: 'social-development',
+    id: 'area-data-science-ai',
+    slug: 'data-science-and-artificial-intelligence',
     status: 'published',
     ...ts,
-    title: 'Social Development',
-    shortDescription: 'Poverty, remittances, youth, and social change.',
+    title: 'Data Science and Artificial Intelligence',
+    shortDescription:
+      'Harnessing data and AI for evidence-based decision-making.',
     description:
-      'Interdisciplinary inquiry into poverty alleviation, remittance impacts, youth opportunity, and broader social development pathways.',
+      'Harnessing data and AI for evidence-based decision-making.',
     order: 3,
+    seo: {
+      title: 'Data Science and Artificial Intelligence | BKSR',
+      description:
+        'Data science and AI for evidence-based decision-making at BK School of Research.',
+      canonicalPath: '/research/areas/data-science-and-artificial-intelligence',
+    },
   },
   {
-    id: 'area-health',
-    slug: 'health',
+    id: 'area-behaviour-decision',
+    slug: 'behaviour-and-decision-making',
     status: 'published',
     ...ts,
-    title: 'Health',
-    shortDescription: 'Health outcomes, wellbeing, and mental health themes.',
+    title: 'Behaviour and Decision-Making',
+    shortDescription:
+      'Understanding the human drivers behind choice and action.',
     description:
-      'Research and dialogue on health-related outcomes, including remittance links to health spending, youth mental health, and wellbeing.',
+      'Understanding the human drivers behind choice and action.',
     order: 4,
+    seo: {
+      title: 'Behaviour and Decision-Making | BKSR',
+      description:
+        'Behavioural and decision-making research at BK School of Research.',
+      canonicalPath: '/research/areas/behaviour-and-decision-making',
+    },
   },
   {
-    id: 'area-entrepreneurship',
-    slug: 'entrepreneurship',
+    id: 'area-health-wellbeing',
+    slug: 'health-and-well-being',
     status: 'published',
     ...ts,
-    title: 'Entrepreneurship',
-    shortDescription: 'Enterprise, opportunity, and economic agency.',
-    description:
-      'Ongoing thematic work by BKSR scholars on entrepreneurship and related economic agency.',
+    title: 'Health and Well-being',
+    shortDescription:
+      'Promoting health systems and quality of life for all.',
+    description: 'Promoting health systems and quality of life for all.',
     order: 5,
+    seo: {
+      title: 'Health and Well-being | BKSR',
+      description:
+        'Health systems and wellbeing research at BK School of Research.',
+      canonicalPath: '/research/areas/health-and-well-being',
+    },
   },
   {
-    id: 'area-wellbeing',
-    slug: 'wellbeing',
+    id: 'area-environment-climate',
+    slug: 'environment-and-climate',
     status: 'published',
     ...ts,
-    title: 'Wellbeing',
-    shortDescription: 'Social connection, loneliness, and quality of life.',
+    title: 'Environment and Climate',
+    shortDescription:
+      'Building resilience through climate action and environmental stewardship.',
     description:
-      'Studies of wellbeing, social networks, loneliness, and related quality-of-life questions.',
+      'Building resilience through climate action and environmental stewardship.',
     order: 6,
+    seo: {
+      title: 'Environment and Climate | BKSR',
+      description:
+        'Climate action and environmental stewardship research at BK School of Research.',
+      canonicalPath: '/research/areas/environment-and-climate',
+    },
   },
   {
-    id: 'area-poverty',
-    slug: 'poverty',
+    id: 'area-gender-development',
+    slug: 'gender-and-development',
     status: 'published',
     ...ts,
-    title: 'Poverty',
-    shortDescription: 'Poverty measurement, remittances, and welfare.',
-    description:
-      'Research on poverty dynamics, remittance effects on poverty and welfare, and related development indicators.',
+    title: 'Gender and Development',
+    shortDescription:
+      'Advancing equity and empowerment across gender lines.',
+    description: 'Advancing equity and empowerment across gender lines.',
     order: 7,
+    seo: {
+      title: 'Gender and Development | BKSR',
+      description:
+        'Gender equity and development research at BK School of Research.',
+      canonicalPath: '/research/areas/gender-and-development',
+    },
   },
   {
-    id: 'area-women-empowerment',
-    slug: 'women-empowerment',
+    id: 'area-migration-diaspora',
+    slug: 'migration-and-diaspora',
     status: 'published',
     ...ts,
-    title: 'Women Empowerment',
-    shortDescription: 'Gender, agency, and development.',
+    title: 'Migration and Diaspora',
+    shortDescription:
+      'Examining mobility, displacement, and cross-border connections.',
     description:
-      'Thematic research and capacity work on gender and development, including women empowerment.',
+      'Examining mobility, displacement, and cross-border connections.',
     order: 8,
+    seo: {
+      title: 'Migration and Diaspora | BKSR',
+      description:
+        'Migration and diaspora research at BK School of Research.',
+      canonicalPath: '/research/areas/migration-and-diaspora',
+    },
   },
   {
-    id: 'area-environment',
-    slug: 'environment',
+    id: 'area-society-politics',
+    slug: 'society-and-politics',
     status: 'published',
     ...ts,
-    title: 'Environment',
-    shortDescription: 'Environmental impacts and sustainability practice.',
-    description:
-      'Work on environmental impacts, sustainability in practice, and related ecological questions.',
+    title: 'Society and Politics',
+    shortDescription:
+      'Exploring governance, institutions, and civic life.',
+    description: 'Exploring governance, institutions, and civic life.',
     order: 9,
+    seo: {
+      title: 'Society and Politics | BKSR',
+      description:
+        'Governance, institutions, and civic life research at BK School of Research.',
+      canonicalPath: '/research/areas/society-and-politics',
+    },
   },
   {
-    id: 'area-climate-environment',
-    slug: 'climate-and-environment',
+    id: 'area-education-culture',
+    slug: 'education-and-culture',
     status: 'published',
     ...ts,
-    title: 'Climate & Environment',
-    shortDescription: 'Climate change perception, risk, and adaptation themes.',
-    description:
-      'Research and commentary on climate change causes and effects in Bangladesh and the region, including student perception and knowledge studies.',
+    title: 'Education and Culture',
+    shortDescription:
+      'Shaping knowledge, learning, and cultural identity.',
+    description: 'Shaping knowledge, learning, and cultural identity.',
     order: 10,
+    seo: {
+      title: 'Education and Culture | BKSR',
+      description:
+        'Education and culture research at BK School of Research.',
+      canonicalPath: '/research/areas/education-and-culture',
+    },
   },
   {
-    id: 'area-behavioral-economics',
-    slug: 'behavioral-economics',
+    id: 'area-media-communication',
+    slug: 'media-and-communication',
     status: 'published',
     ...ts,
-    title: 'Behavioral Economics',
-    shortDescription: 'Behavioral insights for economic decision-making.',
+    title: 'Media and Communication',
+    shortDescription:
+      'Understanding information flow and public discourse in a digital age.',
     description:
-      'Exploration of behavioral economics ideas and their relevance to development and policy.',
+      'Understanding information flow and public discourse in a digital age.',
     order: 11,
-  },
-  {
-    id: 'area-sustainable-development',
-    slug: 'sustainable-development',
-    status: 'published',
-    ...ts,
-    title: 'Sustainable Development',
-    shortDescription: 'Research as a lever for sustainable progress.',
-    description:
-      'Research and public writing on sustainable development, innovation, and the role of rigorous inquiry.',
-    order: 12,
-  },
-  {
-    id: 'area-business-economics',
-    slug: 'business-and-economics',
-    status: 'published',
-    ...ts,
-    title: 'Business & Economics',
-    shortDescription: 'Financial economics, remittances, and markets.',
-    description:
-      'Applied work in business and economics, including remittances, financial forecasting, banking performance, and related topics.',
-    order: 13,
+    seo: {
+      title: 'Media and Communication | BKSR',
+      description:
+        'Media and communication research at BK School of Research.',
+      canonicalPath: '/research/areas/media-and-communication',
+    },
   },
 ];

@@ -13,7 +13,16 @@ import { news } from './news';
 import { notices } from './notices';
 import { pages } from './pages';
 import { people } from './people';
+import { personContentLinks } from './person-content-links';
+import {
+  achievementAssignments,
+  achievements,
+  joinApplications,
+  memberAchievements,
+  roleAssignments,
+} from './people-extras';
 import { publications } from './publications';
+import { registrationEntries, registrationForms } from './registration-forms';
 import { researchAreas } from './research-areas';
 import { researchProjects } from './research-projects';
 import { resources } from './resources';
@@ -41,6 +50,14 @@ export const seedDatabase: ContentDatabase = {
   galleryAlbums,
   galleryImages,
   media,
+  personContentLinks,
+  registrationForms,
+  registrationEntries,
+  roleAssignments,
+  joinApplications,
+  achievements,
+  achievementAssignments,
+  memberAchievements,
 };
 
 export {
@@ -57,6 +74,14 @@ export {
   notices,
   pages,
   people,
+  personContentLinks,
+  roleAssignments,
+  joinApplications,
+  achievements,
+  achievementAssignments,
+  memberAchievements,
+  registrationForms,
+  registrationEntries,
   publications,
   researchAreas,
   researchProjects,

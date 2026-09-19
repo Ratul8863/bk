@@ -1,9 +1,13 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { Plus, Search, Trash2 } from 'lucide-react';
 import type { MediaAsset, MediaKind } from '@/types/content';
 import { ConfirmDialog } from './ConfirmDialog';
+import {
+  AdminPageHeader,
+  AdminPrimaryButton,
+} from './AdminUI';
 import { StatusBadge } from './StatusBadge';
 import { useCms } from './CmsProvider';
 
@@ -11,18 +15,28 @@ const PLACEHOLDER =
   'https://placehold.co/800x600/E7ECE7/1C6257?text=BKSR+Media';
 
 export function MediaLibraryPage() {
-  const { database, ready, createItem, updateItem, deleteItem } = useCms();
+  const { database, ready, createItem, updateItem, deleteItem, refresh } =
+    useCms();
   const [query, setQuery] = useState('');
   const [kind, setKind] = useState<string>('');
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showAdd, setShowAdd] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [cloudinaryReady, setCloudinaryReady] = useState(false);
   const [addForm, setAddForm] = useState({
     title: '',
     url: PLACEHOLDER,
     alt: '',
     kind: 'image' as MediaKind,
   });
+
+  useEffect(() => {
+    void import('@/lib/cms/client-api')
+      .then(({ cmsApi }) => cmsApi.health())
+      .then((h) => setCloudinaryReady(Boolean(h.cloudinaryConfigured)))
+      .catch(() => setCloudinaryReady(false));
+  }, []);
 
   const items = useMemo(() => {
     if (!database) return [];
@@ -39,39 +53,35 @@ export function MediaLibraryPage() {
   const selected = items.find((i) => i.id === selectedId) ?? items[0] ?? null;
 
   if (!ready || !database) {
-    return <p className="text-sm text-[#68727D]">Loading media…</p>;
+    return <p className="text-sm text-[#5B6B7C]">Loading media…</p>;
   }
 
-  const saveSelected = (patch: Partial<MediaAsset>) => {
+  const saveSelected = async (patch: Partial<MediaAsset>) => {
     if (!selected) return;
-    updateItem('media', selected.id, patch);
+    await updateItem('media', selected.id, patch);
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-[family-name:var(--font-admin-display)] text-2xl text-[#0D2745]">
-            Media Library
-          </h1>
-          <p className="mt-1 text-sm text-[#68727D]">
-            Browse assets, edit titles and alt text, and add URLs. Ready for
-            Cloudinary or S3 later.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setShowAdd(true)}
-          className="inline-flex items-center gap-2 rounded-lg bg-[#173B6C] px-3.5 py-2 text-sm font-medium text-white hover:bg-[#0D2745]"
-        >
-          <Plus className="h-4 w-4" />
-          Add media
-        </button>
-      </div>
+    <div className="space-y-6">
+      <AdminPageHeader
+        eyebrow="Library"
+        title="Media library"
+        description={
+          cloudinaryReady
+            ? 'Upload images to Cloudinary, or paste an existing URL. Public CDN links are saved on each media record.'
+            : 'Browse assets, edit titles and alt text, and add URLs. Set Cloudinary env vars to enable file upload.'
+        }
+        action={
+          <AdminPrimaryButton onClick={() => setShowAdd(true)}>
+            <Plus className="h-4 w-4" />
+            Add media
+          </AdminPrimaryButton>
+        }
+      />
 
-      <div className="flex flex-col gap-3 rounded-xl border border-[#D9DEE5] bg-[#F8F7F3] p-3 sm:flex-row">
+      <div className="flex flex-col gap-3 rounded-2xl border border-[#E2E8F0] bg-white p-3 shadow-[0_1px_2px_rgba(11,31,54,0.04)] sm:flex-row">
         <div className="relative min-w-0 flex-1">
-          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#9AA3A5]" />
+          <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7A90A8]" />
           <input
             value={query}
             onChange={(e) => setQuery(e.target.value)}
@@ -207,8 +217,9 @@ export function MediaLibraryPage() {
               Add media
             </h2>
             <p className="text-xs text-[#68727D]">
-              Mock upload — paste a URL or use the placeholder asset. Swap this
-              dialog for Cloudinary/S3 upload later.
+              {cloudinaryReady
+                ? 'Upload a file to Cloudinary, or paste any public image URL below.'
+                : 'Paste a public image URL, or configure Cloudinary to enable file upload.'}
             </p>
             <label className="block space-y-1 text-sm">
               <span className="font-medium">Title</span>
@@ -259,6 +270,50 @@ export function MediaLibraryPage() {
                 <option value="other">Other</option>
               </select>
             </label>
+            {cloudinaryReady ? (
+              <label className="block space-y-1 text-sm">
+                <span className="font-medium">Upload file to Cloudinary</span>
+                <input
+                  type="file"
+                  accept="image/*,application/pdf,video/*,audio/*"
+                  disabled={uploading}
+                  onChange={async (e) => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    setUploading(true);
+                    try {
+                      const { cmsApi } = await import('@/lib/cms/client-api');
+                      const result = await cmsApi.uploadMedia(file, {
+                        title: addForm.title || file.name,
+                        alt: addForm.alt,
+                        kind: addForm.kind,
+                      });
+                      setSelectedId(result.item.id);
+                      setShowAdd(false);
+                      setAddForm({
+                        title: '',
+                        url: PLACEHOLDER,
+                        alt: '',
+                        kind: 'image',
+                      });
+                      await refresh();
+                    } catch (err) {
+                      window.alert(
+                        err instanceof Error ? err.message : 'Upload failed',
+                      );
+                    } finally {
+                      setUploading(false);
+                    }
+                  }}
+                  className="w-full rounded-lg border border-[#D9DEE5] bg-white px-3 py-2 text-sm"
+                />
+                <span className="text-xs text-[#68727D]">
+                  {uploading
+                    ? 'Uploading…'
+                    : 'Or paste a URL below and use Add to library'}
+                </span>
+              </label>
+            ) : null}
             <div className="flex justify-end gap-2 pt-2">
               <button
                 type="button"
@@ -269,8 +324,8 @@ export function MediaLibraryPage() {
               </button>
               <button
                 type="button"
-                onClick={() => {
-                  const created = createItem('media', {
+                onClick={async () => {
+                  const created = await createItem('media', {
                     title: addForm.title || 'Untitled asset',
                     url: addForm.url || PLACEHOLDER,
                     alt: addForm.alt,
@@ -299,11 +354,11 @@ export function MediaLibraryPage() {
       <ConfirmDialog
         open={Boolean(deleteId)}
         title="Delete media asset?"
-        description="References in content will not be auto-cleaned in this demo."
+        description="References in content will not be auto-cleaned. Update any posts that still use this file."
         onCancel={() => setDeleteId(null)}
-        onConfirm={() => {
+        onConfirm={async () => {
           if (deleteId) {
-            deleteItem('media', deleteId);
+            await deleteItem('media', deleteId);
             setSelectedId(null);
           }
           setDeleteId(null);

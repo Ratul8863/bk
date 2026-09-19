@@ -1,4 +1,4 @@
-import type {
+﻿import type {
   Activity,
   ContentCollectionKey,
   ContentStatus,
@@ -10,6 +10,7 @@ import type {
   Page,
   Person,
   PersonCategory,
+  PersonLinkEntityType,
   Publication,
   ResearchArea,
   ResearchProject,
@@ -40,6 +41,7 @@ export type FieldType =
   | 'checkbox'
   | 'datetime'
   | 'url'
+  | 'image'
   | 'slug'
   | 'status'
   | 'body';
@@ -48,7 +50,7 @@ export interface FieldDef {
   name: string;
   label: string;
   type: FieldType;
-  tab?: 'content' | 'metadata' | 'media' | 'relations' | 'seo';
+  tab?: 'content' | 'metadata' | 'media' | 'relations';
   placeholder?: string;
   help?: string;
   options?: { value: string; label: string }[];
@@ -62,9 +64,21 @@ export interface CollectionConfig {
   singular: string;
   plural: string;
   addLabel: string;
+  /** One-line explanation for non-developers */
+  helpText?: string;
+  /** e.g. Appears on /news */
+  publicHint?: string;
+  /** Field used as card thumbnail */
+  cardImageKey?: string;
+  /** Field used as card excerpt */
+  cardExcerptKey?: string;
   searchFields: string[];
   previewPath?: (item: { slug?: string; status?: ContentStatus; researchStatus?: string }) => string | null;
-  listColumns: { key: string; label: string; render?: 'status' | 'date' | 'text' }[];
+  listColumns: {
+    key: string;
+    label: string;
+    render?: 'status' | 'date' | 'text' | 'claim';
+  }[];
   filters?: {
     name: string;
     label: string;
@@ -74,39 +88,16 @@ export interface CollectionConfig {
   defaults: () => Record<string, unknown>;
   getTitle: (item: Record<string, unknown>) => string;
   canDuplicate?: boolean;
+  personLink?: {
+    entityType: PersonLinkEntityType;
+    defaultRole: string;
+  };
 }
 
 const statusOptions = [
   { value: 'draft', label: 'Draft' },
   { value: 'published', label: 'Published' },
   { value: 'archived', label: 'Archived' },
-];
-
-const seoFields: FieldDef[] = [
-  { name: 'seo.title', label: 'SEO Title', type: 'text', tab: 'seo' },
-  {
-    name: 'seo.description',
-    label: 'SEO Description',
-    type: 'textarea',
-    tab: 'seo',
-    rows: 3,
-  },
-  {
-    name: 'seo.keywords',
-    label: 'Keywords',
-    type: 'tags',
-    tab: 'seo',
-    help: 'Comma-separated keywords',
-  },
-  { name: 'seo.ogImage', label: 'OG Image URL', type: 'url', tab: 'seo' },
-  {
-    name: 'seo.canonicalPath',
-    label: 'Canonical Path',
-    type: 'text',
-    tab: 'seo',
-    placeholder: '/path',
-  },
-  { name: 'seo.noIndex', label: 'Hide from search engines', type: 'checkbox', tab: 'seo' },
 ];
 
 const personCategories: { value: PersonCategory; label: string }[] = [
@@ -128,10 +119,15 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     key: 'publications',
     singular: 'Publication',
     plural: 'Publications',
-    addLabel: 'Add Publication',
+    addLabel: 'Add publication',
+    helpText: 'Papers, reports, and briefs in the Publications library.',
+    publicHint: '/publications',
+    cardImageKey: 'coverImageUrl',
+    cardExcerptKey: 'abstract',
     searchFields: ['title', 'citation', 'authors', 'venue'],
     previewPath: (item) => (item.slug ? `/publications/${item.slug}` : null),
     canDuplicate: true,
+    personLink: { entityType: 'publication', defaultRole: 'author' },
     listColumns: [
       { key: 'title', label: 'Title' },
       { key: 'type', label: 'Type' },
@@ -180,7 +176,7 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     }),
     fields: [
       { name: 'title', label: 'Title', type: 'text', tab: 'content', required: true },
-      { name: 'slug', label: 'Slug', type: 'slug', tab: 'content' },
+      { name: 'slug', label: 'Page URL name', type: 'slug', tab: 'content' },
       { name: 'status', label: 'Status', type: 'status', tab: 'content' },
       {
         name: 'type',
@@ -210,36 +206,38 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       { name: 'publisher', label: 'Publisher', type: 'text', tab: 'metadata' },
       { name: 'doi', label: 'DOI', type: 'text', tab: 'metadata' },
       { name: 'url', label: 'External URL', type: 'url', tab: 'metadata' },
-      { name: 'coverImageUrl', label: 'Cover image URL', type: 'url', tab: 'media', help: 'Prototype or authentic cover visual' },
+      { name: 'coverImageUrl', label: 'Cover image', type: 'image', tab: 'media', help: 'Prototype or authentic cover visual' },
       { name: 'language', label: 'Language', type: 'text', tab: 'metadata' },
       {
         name: 'areaIds',
         label: 'Research Areas',
         type: 'tags',
         tab: 'relations',
-        help: 'Area IDs, comma-separated',
+        help: 'Focus area IDs from the Focus areas list (comma-separated)',
       },
       { name: 'projectId', label: 'Related research project', type: 'text', tab: 'relations' },
-      ...seoFields,
     ],
   },
 
   research: {
     slug: 'research',
     key: 'researchProjects',
-    singular: 'Research Project',
-    plural: 'Research Projects',
-    addLabel: 'Add Research Project',
-    searchFields: ['title', 'summary', 'leadAuthorNames'],
-    previewPath: (item) => {
-      if (!item.slug) return null;
-      const bucket = item.researchStatus === 'ongoing' ? 'ongoing' : 'previous';
-      return `/research/${bucket}/${item.slug}`;
-    },
+    singular: 'Research project',
+    plural: 'Research projects',
+    addLabel: 'Add research project',
+    helpText:
+      'Items on the Research page. Choose Ongoing or Completed, fill the card details, pick focus areas, and attach the journal or source link visitors open on click.',
+    publicHint: '/research',
+    cardImageKey: 'featuredImageUrl',
+    cardExcerptKey: 'summary',
+    searchFields: ['title', 'summary', 'leadAuthorNames', 'url', 'description'],
+    previewPath: () => '/research',
     canDuplicate: true,
+    personLink: { entityType: 'research', defaultRole: 'author' },
     listColumns: [
       { key: 'title', label: 'Title' },
-      { key: 'researchStatus', label: 'Research status' },
+      { key: 'researchStatus', label: 'Category' },
+      { key: 'year', label: 'Year' },
       { key: 'status', label: 'Status', render: 'status' },
       { key: 'updatedAt', label: 'Updated', render: 'date' },
     ],
@@ -247,7 +245,7 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       { name: 'status', label: 'Status', options: statusOptions },
       {
         name: 'researchStatus',
-        label: 'Project status',
+        label: 'Category',
         options: [
           { value: 'ongoing', label: 'Ongoing' },
           { value: 'completed', label: 'Completed' },
@@ -264,68 +262,139 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       summary: '',
       description: '',
       researchStatus: 'ongoing',
+      url: '',
       areaIds: [],
       leadAuthorNames: [],
+      publicationIds: [],
       year: new Date().getFullYear(),
+      startYear: null,
+      endYear: null,
+      featuredImageUrl: null,
       seo: {},
     }),
     fields: [
-      { name: 'title', label: 'Title', type: 'text', tab: 'content', required: true },
-      { name: 'slug', label: 'Slug', type: 'slug', tab: 'content' },
-      { name: 'status', label: 'Status', type: 'status', tab: 'content' },
+      {
+        name: 'title',
+        label: 'Title',
+        type: 'text',
+        tab: 'content',
+        required: true,
+        help: 'Shown as the main heading on research cards.',
+      },
       {
         name: 'researchStatus',
-        label: 'Research Status',
+        label: 'Category',
         type: 'select',
         tab: 'content',
+        required: true,
         options: [
           { value: 'ongoing', label: 'Ongoing' },
           { value: 'completed', label: 'Completed' },
           { value: 'planned', label: 'Planned' },
           { value: 'archived', label: 'Archived' },
         ],
+        help: 'Ongoing and Completed appear in those filters on /research.',
       },
-      { name: 'summary', label: 'Summary', type: 'textarea', tab: 'content', rows: 3 },
-      { name: 'description', label: 'Description', type: 'body', tab: 'content', rows: 10 },
+      {
+        name: 'status',
+        label: 'Publish status',
+        type: 'status',
+        tab: 'content',
+      },
+      {
+        name: 'summary',
+        label: 'Short summary',
+        type: 'textarea',
+        tab: 'content',
+        rows: 3,
+        help: '1–3 sentences shown under the title on the Research page.',
+      },
+      {
+        name: 'description',
+        label: 'Full details',
+        type: 'body',
+        tab: 'content',
+        rows: 8,
+        help: 'Optional longer notes (citation text, context, or notes for the team).',
+      },
+      {
+        name: 'url',
+        label: 'External link (journal / DOI / source)',
+        type: 'url',
+        tab: 'content',
+        placeholder: 'https://doi.org/… or journal page URL',
+        help: 'When someone clicks this research item on the site, they open this link. Leave blank if there is no public link yet.',
+      },
       {
         name: 'leadAuthorNames',
-        label: 'Lead Authors',
+        label: 'Authors',
         type: 'tags',
-        tab: 'metadata',
+        tab: 'content',
+        placeholder: 'B. Kumar, P. Banik',
+        help: 'Comma-separated names, shown on the card.',
       },
-      { name: 'year', label: 'Year', type: 'number', tab: 'metadata' },
-      { name: 'startYear', label: 'Start Year', type: 'number', tab: 'metadata' },
-      { name: 'endYear', label: 'End Year', type: 'number', tab: 'metadata' },
       {
-        name: 'featuredImageUrl',
-        label: 'Feature image URL',
-        type: 'url',
-        tab: 'media',
-        help: 'Prototype or authentic project visual',
+        name: 'year',
+        label: 'Year',
+        type: 'number',
+        tab: 'content',
+        help: 'Display year on the Research page.',
       },
       {
         name: 'areaIds',
-        label: 'Research Areas',
-        type: 'tags',
-        tab: 'relations',
-        help: 'Area IDs',
+        label: 'Focus areas',
+        type: 'multiselect',
+        tab: 'content',
+        help: 'Pick one or more focus areas. Manage the area list under Focus areas.',
+      },
+      {
+        name: 'featuredImageUrl',
+        label: 'Card image',
+        type: 'image',
+        tab: 'media',
+        help: 'Optional photo for homepage or featured cards.',
+      },
+      {
+        name: 'startYear',
+        label: 'Start year',
+        type: 'number',
+        tab: 'metadata',
+        help: 'Optional — when the project started.',
+      },
+      {
+        name: 'endYear',
+        label: 'End year',
+        type: 'number',
+        tab: 'metadata',
+        help: 'Optional — leave empty for ongoing work.',
+      },
+      {
+        name: 'slug',
+        label: 'Internal name',
+        type: 'slug',
+        tab: 'metadata',
+        help: 'Auto-fills from the title. Used for admin and redirects — visitors do not need it.',
       },
       {
         name: 'publicationIds',
-        label: 'Publication IDs',
-        type: 'tags',
+        label: 'Linked publications (optional)',
+        type: 'multiselect',
         tab: 'relations',
+        help: 'Connect library publication records if you already added them under Publications. The external link above still controls where clicks go.',
       },
-      ...seoFields,
     ],
   },
 
   news: {
     slug: 'news',
     key: 'news',
-    singular: 'News Article',
-    plural: 'News',
-    addLabel: 'Add News Article',
+    singular: 'News article',
+    plural: 'News articles',
+    addLabel: 'Write news article',
+    helpText: 'Stories that appear on the News pages of the website.',
+    publicHint: '/news',
+    cardImageKey: 'featuredImageUrl',
+    cardExcerptKey: 'excerpt',
     searchFields: ['title', 'excerpt', 'body', 'author'],
     previewPath: (item) => (item.slug ? `/news/${item.slug}` : null),
     canDuplicate: true,
@@ -348,22 +417,22 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       seo: {},
     }),
     fields: [
-      { name: 'title', label: 'Title', type: 'text', tab: 'content', required: true },
-      { name: 'slug', label: 'Slug', type: 'slug', tab: 'content' },
+      { name: 'title', label: 'Headline', type: 'text', tab: 'content', required: true, help: 'Main title visitors see.' },
+      { name: 'slug', label: 'Page URL name', type: 'slug', tab: 'content', help: 'Auto-fills from the headline. Used in /news/...' },
       { name: 'status', label: 'Status', type: 'status', tab: 'content' },
-      { name: 'excerpt', label: 'Excerpt', type: 'textarea', tab: 'content', rows: 3 },
-      { name: 'body', label: 'Body', type: 'body', tab: 'content', rows: 12 },
-      { name: 'author', label: 'Author', type: 'text', tab: 'metadata' },
-      { name: 'categoryLabels', label: 'Categories', type: 'tags', tab: 'metadata' },
-      { name: 'language', label: 'Language', type: 'text', tab: 'metadata' },
+      { name: 'excerpt', label: 'Short summary', type: 'textarea', tab: 'content', rows: 3, help: '1-2 sentences for cards and previews.' },
+      { name: 'body', label: 'Full article', type: 'body', tab: 'content', rows: 14, help: 'The complete article text.' },
+      { name: 'author', label: 'Author name', type: 'text', tab: 'metadata' },
+      { name: 'categoryLabels', label: 'Topics / tags', type: 'tags', tab: 'metadata', help: 'Comma-separated, e.g. Climate, Education' },
+      { name: 'language', label: 'Language', type: 'text', tab: 'metadata', placeholder: 'en' },
       {
         name: 'featuredImageUrl',
-        label: 'Featured Image',
-        type: 'url',
+        label: 'Featured image',
+        type: 'image',
         tab: 'media',
-        placeholder: 'https://…',
+        placeholder: 'https://... or /media/...',
+        help: 'Paste a link from Photo & file library.',
       },
-      ...seoFields,
     ],
   },
 
@@ -372,10 +441,15 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     key: 'events',
     singular: 'Event',
     plural: 'Events',
-    addLabel: 'Add Event',
+    addLabel: 'Add event',
+    helpText: 'Gatherings on the Events calendar - seminars, talks, workshops.',
+    publicHint: '/events',
+    cardImageKey: 'featuredImageUrl',
+    cardExcerptKey: 'summary',
     searchFields: ['title', 'summary', 'location', 'speakers'],
     previewPath: (item) => (item.slug ? `/events/${item.slug}` : null),
     canDuplicate: true,
+    personLink: { entityType: 'event', defaultRole: 'speaker' },
     listColumns: [
       { key: 'title', label: 'Title' },
       { key: 'eventStatus', label: 'Event status' },
@@ -386,10 +460,10 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       { name: 'status', label: 'Status', options: statusOptions },
       {
         name: 'eventStatus',
-        label: 'Event status',
+        label: 'Calendar',
         options: [
           { value: 'upcoming', label: 'Upcoming' },
-          { value: 'past', label: 'Past' },
+          { value: 'past', label: 'Past / archive' },
           { value: 'cancelled', label: 'Cancelled' },
         ],
       },
@@ -407,40 +481,58 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       location: '',
       isOnline: false,
       speakers: [],
+      registrationUrl: null,
+      registrationFormId: null,
+      recordingUrl: null,
       featuredImageUrl: null,
       seo: {},
     }),
     fields: [
-      { name: 'title', label: 'Title', type: 'text', tab: 'content', required: true },
-      { name: 'slug', label: 'Slug', type: 'slug', tab: 'content' },
+      { name: 'title', label: 'Event name', type: 'text', tab: 'content', required: true },
+      { name: 'slug', label: 'Page URL name', type: 'slug', tab: 'content', help: 'Auto-fills from the name. Used in /events/...' },
       { name: 'status', label: 'Status', type: 'status', tab: 'content' },
       {
         name: 'eventStatus',
-        label: 'Event Status',
+        label: 'On the calendar as',
         type: 'select',
         tab: 'content',
         options: [
           { value: 'upcoming', label: 'Upcoming' },
-          { value: 'past', label: 'Past' },
+          { value: 'past', label: 'Past / archive' },
           { value: 'cancelled', label: 'Cancelled' },
         ],
+        help: 'Controls Upcoming vs Archive on the public events page.',
       },
-      { name: 'summary', label: 'Summary', type: 'textarea', tab: 'content', rows: 3 },
-      { name: 'description', label: 'Description', type: 'body', tab: 'content', rows: 10 },
-      { name: 'startAt', label: 'Start', type: 'datetime', tab: 'metadata' },
-      { name: 'endAt', label: 'End', type: 'datetime', tab: 'metadata' },
-      { name: 'location', label: 'Location', type: 'text', tab: 'metadata' },
-      { name: 'isOnline', label: 'Online event', type: 'checkbox', tab: 'metadata' },
-      { name: 'registrationUrl', label: 'Registration URL', type: 'url', tab: 'metadata' },
-      { name: 'recordingUrl', label: 'Recording URL', type: 'url', tab: 'metadata' },
-      { name: 'speakers', label: 'Speakers', type: 'tags', tab: 'relations' },
+      { name: 'summary', label: 'Short summary', type: 'textarea', tab: 'content', rows: 3, help: 'Shown on event cards.' },
+      { name: 'description', label: 'Full details', type: 'body', tab: 'content', rows: 12, help: 'Agenda, speakers intro, practical info...' },
+      { name: 'startAt', label: 'Starts', type: 'datetime', tab: 'metadata', required: true },
+      { name: 'endAt', label: 'Ends', type: 'datetime', tab: 'metadata' },
+      { name: 'location', label: 'Venue / place', type: 'text', tab: 'metadata' },
+      { name: 'isOnline', label: 'This is an online event', type: 'checkbox', tab: 'metadata' },
+      {
+        name: 'registrationFormId',
+        label: 'Registration form',
+        type: 'select',
+        tab: 'metadata',
+        options: [{ value: '', label: 'None — use dedicated form or external link' }],
+        help: 'Pick a form from Forms (shared or dedicated). Create forms under Events & applications → Forms.',
+      },
+      {
+        name: 'registrationUrl',
+        label: 'External registration link',
+        type: 'url',
+        tab: 'metadata',
+        help: 'Optional fallback if no in-site form is attached.',
+      },
+      { name: 'recordingUrl', label: 'Recording / replay link', type: 'url', tab: 'metadata', help: 'YouTube or archive link after the event.' },
+      { name: 'speakers', label: 'Speaker names', type: 'tags', tab: 'relations', help: 'Comma-separated names. You can also link people profiles below.' },
       {
         name: 'featuredImageUrl',
-        label: 'Featured Image',
-        type: 'url',
+        label: 'Featured image',
+        type: 'image',
         tab: 'media',
+        help: 'Paste a link from Photo & file library.',
       },
-      ...seoFields,
     ],
   },
 
@@ -449,7 +541,11 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     key: 'notices',
     singular: 'Notice',
     plural: 'Notices',
-    addLabel: 'Add Notice',
+    addLabel: 'Add notice',
+    helpText: 'Announcements, vacancies, and deadlines on Notices.',
+    publicHint: '/notices',
+    cardImageKey: 'featuredImageUrl',
+    cardExcerptKey: 'summary',
     searchFields: ['title', 'summary', 'body'],
     previewPath: (item) => (item.slug ? `/notices/${item.slug}` : null),
     canDuplicate: true,
@@ -481,36 +577,44 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       body: '',
       noticeType: 'announcement',
       deadlineAt: null,
+      applicationFormId: null,
       featuredImageUrl: null,
       seo: {},
     }),
     fields: [
-      { name: 'title', label: 'Title', type: 'text', tab: 'content', required: true },
-      { name: 'slug', label: 'Slug', type: 'slug', tab: 'content' },
+      { name: 'title', label: 'Notice title', type: 'text', tab: 'content', required: true },
+      { name: 'slug', label: 'Page URL name', type: 'slug', tab: 'content' },
       { name: 'status', label: 'Status', type: 'status', tab: 'content' },
       {
         name: 'noticeType',
-        label: 'Notice Type',
+        label: 'Notice type',
         type: 'select',
         tab: 'content',
         options: [
-          { value: 'vacancy', label: 'Vacancy' },
+          { value: 'vacancy', label: 'Vacancy / job' },
           { value: 'announcement', label: 'Announcement' },
           { value: 'deadline', label: 'Deadline' },
           { value: 'general', label: 'General' },
         ],
       },
-      { name: 'summary', label: 'Summary', type: 'textarea', tab: 'content', rows: 3 },
-      { name: 'body', label: 'Body', type: 'body', tab: 'content', rows: 12 },
-      { name: 'deadlineAt', label: 'Deadline', type: 'datetime', tab: 'metadata' },
+      { name: 'summary', label: 'Short summary', type: 'textarea', tab: 'content', rows: 3 },
+      { name: 'body', label: 'Full notice', type: 'body', tab: 'content', rows: 12 },
+      { name: 'deadlineAt', label: 'Deadline date', type: 'datetime', tab: 'metadata' },
+      {
+        name: 'applicationFormId',
+        label: 'Application form (Career)',
+        type: 'select',
+        tab: 'metadata',
+        options: [{ value: '', label: 'None — create under Forms → Career form' }],
+        help: 'For vacancy notices. Attach a shared or dedicated Career form so Apply works on Career / the notice page.',
+      },
       { name: 'language', label: 'Language', type: 'text', tab: 'metadata' },
       {
         name: 'featuredImageUrl',
-        label: 'Featured Image',
-        type: 'url',
+        label: 'Featured image',
+        type: 'image',
         tab: 'media',
       },
-      ...seoFields,
     ],
   },
 
@@ -519,14 +623,19 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     key: 'people',
     singular: 'Person',
     plural: 'People',
-    addLabel: 'Add Person',
-    searchFields: ['name', 'role', 'bio', 'affiliation'],
+    addLabel: 'Add team member',
+    helpText: 'Profiles on the People directory and homepage team section.',
+    publicHint: '/people',
+    cardImageKey: 'photoUrl',
+    cardExcerptKey: 'shortBio',
+    searchFields: ['name', 'role', 'bio', 'affiliation', 'email'],
     previewPath: (item) => (item.slug ? `/people/${item.slug}` : null),
     canDuplicate: true,
     listColumns: [
       { key: 'name', label: 'Name' },
       { key: 'role', label: 'Role' },
       { key: 'category', label: 'Category' },
+      { key: 'claimStatus', label: 'Claim', render: 'claim' },
       { key: 'status', label: 'Status', render: 'status' },
     ],
     filters: [
@@ -542,8 +651,14 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       category: 'research-team',
       bio: '',
       shortBio: '',
+      email: '',
       researchInterests: [],
+      socialLinks: [],
       photoUrl: null,
+      accountId: null,
+      claimStatus: 'unclaimed',
+      verificationCode: null,
+      appointmentYear: null,
       order: 99,
       seo: {},
     }),
@@ -552,7 +667,15 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       { name: 'slug', label: 'URL slug', type: 'slug', tab: 'content' },
       // Reserved: executive-director, distinguished-fellows, research-team, administrative-team
       { name: 'status', label: 'Status', type: 'status', tab: 'content' },
-      { name: 'role', label: 'Role', type: 'text', tab: 'content' },
+      { name: 'role', label: 'Role', type: 'text', tab: 'content', help: 'Current role snapshot. Year history is managed under Role history.' },
+      {
+        name: 'appointmentYear',
+        label: 'Current appointment year',
+        type: 'text',
+        tab: 'content',
+        placeholder: '2025-2026',
+        help: 'Season label for the current role (e.g. 2025-2026). Full history lives in Role history.',
+      },
       {
         name: 'category',
         label: 'Category',
@@ -563,7 +686,21 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       { name: 'shortBio', label: 'Short Bio', type: 'textarea', tab: 'content', rows: 3 },
       { name: 'bio', label: 'Biography', type: 'body', tab: 'content', rows: 12 },
       { name: 'affiliation', label: 'Affiliation', type: 'text', tab: 'metadata' },
-      { name: 'email', label: 'Email', type: 'text', tab: 'metadata' },
+      {
+        name: 'email',
+        label: 'Account invite email (allowlist)',
+        type: 'text',
+        tab: 'metadata',
+        placeholder: 'name@example.org',
+        help: 'Required for profile claim. Share /register - they must use this exact email. Cannot clear once claimed.',
+      },
+      {
+        name: 'verificationCode',
+        label: 'Public verification code',
+        type: 'text',
+        tab: 'metadata',
+        help: 'Auto-assigned on create (BKSR-#####M). Public check at /verify.',
+      },
       { name: 'phone', label: 'Phone', type: 'text', tab: 'metadata' },
       { name: 'order', label: 'Display Order', type: 'number', tab: 'metadata' },
       {
@@ -572,8 +709,7 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
         type: 'tags',
         tab: 'relations',
       },
-      { name: 'photoUrl', label: 'Photo URL', type: 'url', tab: 'media' },
-      ...seoFields,
+      { name: 'photoUrl', label: 'Photo', type: 'image', tab: 'media' },
     ],
   },
 
@@ -582,10 +718,15 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     key: 'activities',
     singular: 'Activity',
     plural: 'Activities',
-    addLabel: 'Add Activity',
+    addLabel: 'Add programme',
+    helpText: 'Programme cards under Activities (seminar, campaigns, talks...).',
+    publicHint: '/activities',
+    cardImageKey: 'imageUrl',
+    cardExcerptKey: 'summary',
     searchFields: ['title', 'summary', 'description'],
     previewPath: (item) => (item.slug ? `/activities/${item.slug}` : null),
     canDuplicate: true,
+    personLink: { entityType: 'activity', defaultRole: 'organizer' },
     listColumns: [
       { key: 'title', label: 'Title' },
       { key: 'type', label: 'Type' },
@@ -619,7 +760,7 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     }),
     fields: [
       { name: 'title', label: 'Title', type: 'text', tab: 'content', required: true },
-      { name: 'slug', label: 'Slug', type: 'slug', tab: 'content' },
+      { name: 'slug', label: 'Page URL name', type: 'slug', tab: 'content' },
       { name: 'status', label: 'Status', type: 'status', tab: 'content' },
       {
         name: 'type',
@@ -637,8 +778,8 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       { name: 'description', label: 'Description', type: 'body', tab: 'content', rows: 10 },
       {
         name: 'imageUrl',
-        label: 'Image URL',
-        type: 'url',
+        label: 'Image',
+        type: 'image',
         tab: 'media',
         help: 'Prototype or authentic programme visual',
       },
@@ -649,7 +790,6 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
         type: 'tags',
         tab: 'relations',
       },
-      ...seoFields,
     ],
   },
 
@@ -658,7 +798,10 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     key: 'resources',
     singular: 'Resource',
     plural: 'Resources',
-    addLabel: 'Add Resource',
+    addLabel: 'Add resource',
+    helpText: 'Guides and materials in the Knowledge Hub.',
+    publicHint: '/resources',
+    cardExcerptKey: 'summary',
     searchFields: ['title', 'summary', 'topics', 'software'],
     previewPath: (item) => (item.slug ? `/resources/${item.slug}` : null),
     canDuplicate: true,
@@ -698,7 +841,7 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     }),
     fields: [
       { name: 'title', label: 'Title', type: 'text', tab: 'content', required: true },
-      { name: 'slug', label: 'Slug', type: 'slug', tab: 'content' },
+      { name: 'slug', label: 'Page URL name', type: 'slug', tab: 'content' },
       { name: 'status', label: 'Status', type: 'status', tab: 'content' },
       {
         name: 'resourceType',
@@ -720,7 +863,6 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       { name: 'software', label: 'Software', type: 'tags', tab: 'metadata' },
       { name: 'externalUrl', label: 'External URL', type: 'url', tab: 'media' },
       { name: 'notes', label: 'Notes', type: 'textarea', tab: 'metadata', rows: 3 },
-      ...seoFields,
     ],
   },
 
@@ -729,7 +871,10 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     key: 'pages',
     singular: 'Page',
     plural: 'Pages',
-    addLabel: 'Add Page',
+    addLabel: 'Add page',
+    helpText: 'About and policy pages (Who we are, Governance, Policies...).',
+    publicHint: '/about/...',
+    cardExcerptKey: 'excerpt',
     searchFields: ['title', 'excerpt', 'body'],
     previewPath: (item) => (item.slug ? `/${item.slug}` : null),
     canDuplicate: true,
@@ -753,23 +898,25 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     }),
     fields: [
       { name: 'title', label: 'Title', type: 'text', tab: 'content', required: true },
-      { name: 'slug', label: 'Slug', type: 'slug', tab: 'content' },
+      { name: 'slug', label: 'Page URL name', type: 'slug', tab: 'content' },
       { name: 'status', label: 'Status', type: 'status', tab: 'content' },
       { name: 'excerpt', label: 'Excerpt', type: 'textarea', tab: 'content', rows: 3 },
       { name: 'body', label: 'Body', type: 'body', tab: 'content', rows: 14 },
       { name: 'template', label: 'Template', type: 'text', tab: 'metadata' },
       { name: 'order', label: 'Order', type: 'number', tab: 'metadata' },
       { name: 'parentId', label: 'Parent Page ID', type: 'text', tab: 'relations' },
-      ...seoFields,
     ],
   },
 
   gallery: {
     slug: 'gallery',
     key: 'galleryAlbums',
-    singular: 'Gallery Album',
-    plural: 'Gallery',
-    addLabel: 'Add Album',
+    singular: 'Gallery album',
+    plural: 'Gallery albums',
+    addLabel: 'Add album',
+    helpText: 'Photo albums for the Gallery page.',
+    publicHint: '/gallery',
+    cardExcerptKey: 'description',
     searchFields: ['title', 'description'],
     previewPath: () => '/gallery',
     canDuplicate: true,
@@ -792,7 +939,7 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
     }),
     fields: [
       { name: 'title', label: 'Title', type: 'text', tab: 'content', required: true },
-      { name: 'slug', label: 'Slug', type: 'slug', tab: 'content' },
+      { name: 'slug', label: 'Page URL name', type: 'slug', tab: 'content' },
       { name: 'status', label: 'Status', type: 'status', tab: 'content' },
       { name: 'description', label: 'Description', type: 'textarea', tab: 'content', rows: 4 },
       { name: 'comingSoon', label: 'Coming soon', type: 'checkbox', tab: 'metadata' },
@@ -804,16 +951,18 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
         help: 'Gallery image IDs',
       },
       { name: 'coverImageId', label: 'Cover Image ID', type: 'text', tab: 'media' },
-      ...seoFields,
     ],
   },
 
   media: {
     slug: 'media',
     key: 'media',
-    singular: 'Media Asset',
-    plural: 'Media',
-    addLabel: 'Add Media',
+    singular: 'Media file',
+    plural: 'Media files',
+    addLabel: 'Add media',
+    helpText: 'Photos and files you reuse across the site. Prefer the Media Library page for uploads.',
+    cardImageKey: 'url',
+    cardExcerptKey: 'alt',
     searchFields: ['title', 'alt', 'url', 'credit'],
     listColumns: [
       { key: 'title', label: 'Title' },
@@ -861,7 +1010,7 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
         ],
       },
       { name: 'status', label: 'Status', type: 'status', tab: 'content' },
-      { name: 'url', label: 'URL', type: 'url', tab: 'media', required: true },
+      { name: 'url', label: 'Image', type: 'image', tab: 'media', required: true },
       { name: 'alt', label: 'Alt text', type: 'text', tab: 'media' },
       { name: 'credit', label: 'Credit', type: 'text', tab: 'metadata' },
       { name: 'source', label: 'Source', type: 'text', tab: 'metadata' },
@@ -873,11 +1022,14 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
   'research-areas': {
     slug: 'research-areas',
     key: 'researchAreas',
-    singular: 'Research Area',
-    plural: 'Research Areas',
-    addLabel: 'Add Research Area',
+    singular: 'Focus area',
+    plural: 'Focus areas',
+    addLabel: 'Add focus area',
+    helpText:
+      'Categories used to filter research on /research and on the homepage Focus Areas section.',
+    publicHint: '/research/areas',
     searchFields: ['title', 'description', 'shortDescription'],
-    previewPath: (item) => (item.slug ? `/research/areas/${item.slug}` : null),
+    previewPath: () => '/research/areas',
     canDuplicate: true,
     listColumns: [
       { key: 'title', label: 'Title' },
@@ -899,31 +1051,44 @@ export const collectionConfigs: Record<AdminCollectionSlug, CollectionConfig> = 
       seo: {},
     }),
     fields: [
-      { name: 'title', label: 'Title', type: 'text', tab: 'content', required: true },
-      { name: 'slug', label: 'Slug', type: 'slug', tab: 'content' },
-      { name: 'status', label: 'Status', type: 'status', tab: 'content' },
+      {
+        name: 'title',
+        label: 'Area name',
+        type: 'text',
+        tab: 'content',
+        required: true,
+        help: 'e.g. Environment and Climate',
+      },
+      {
+        name: 'slug',
+        label: 'Internal name',
+        type: 'slug',
+        tab: 'content',
+        help: 'Auto-fills from the name.',
+      },
+      { name: 'status', label: 'Publish status', type: 'status', tab: 'content' },
       {
         name: 'shortDescription',
-        label: 'Short Description',
+        label: 'Short line',
         type: 'textarea',
         tab: 'content',
         rows: 2,
-      },
-      { name: 'description', label: 'Description', type: 'body', tab: 'content', rows: 8 },
-      { name: 'order', label: 'Display Order', type: 'number', tab: 'metadata' },
-      {
-        name: 'relatedProjectIds',
-        label: 'Related research projects',
-        type: 'tags',
-        tab: 'relations',
+        help: 'One short line for cards and filters.',
       },
       {
-        name: 'relatedPublicationIds',
-        label: 'Related publications',
-        type: 'tags',
-        tab: 'relations',
+        name: 'description',
+        label: 'Description',
+        type: 'body',
+        tab: 'content',
+        rows: 8,
       },
-      ...seoFields,
+      {
+        name: 'order',
+        label: 'Display order',
+        type: 'number',
+        tab: 'metadata',
+        help: 'Lower numbers appear first.',
+      },
     ],
   },
 };
@@ -941,3 +1106,4 @@ export type CollectionItem =
   | GalleryAlbum
   | MediaAsset
   | ResearchArea;
+

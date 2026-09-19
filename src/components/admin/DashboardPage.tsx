@@ -3,14 +3,25 @@
 import Link from 'next/link';
 import { useMemo } from 'react';
 import {
+  ArrowRight,
   BookOpen,
   Calendar,
+  Clock,
   FileEdit,
   FlaskConical,
+  Home,
+  Image,
+  Megaphone,
+  Newspaper,
   Users,
-  Clock,
 } from 'lucide-react';
 import { formatDateShort } from '@/lib/utils';
+import {
+  AdminPageHeader,
+  AdminPanel,
+  AdminPrimaryButton,
+  AdminSecondaryButton,
+} from './AdminUI';
 import { StatusBadge } from './StatusBadge';
 import { useCms } from './CmsProvider';
 
@@ -19,36 +30,45 @@ function MetricCard({
   value,
   href,
   icon: Icon,
+  hint,
 }: {
   label: string;
   value: number;
   href: string;
   icon: typeof BookOpen;
+  hint?: string;
 }) {
   return (
     <Link
       href={href}
-      className="rounded-xl border border-[#D9DEE5] bg-[#F8F7F3] p-4 transition-colors hover:border-[#173B6C]/40 hover:bg-white"
+      className="group relative overflow-hidden rounded-2xl border border-[#E2E8F0] bg-white p-5 shadow-[0_1px_2px_rgba(11,31,54,0.04)] transition hover:border-[#0B1F36]/25 hover:shadow-[0_8px_24px_rgba(11,31,54,0.06)]"
     >
       <div className="flex items-start justify-between gap-3">
-        <div>
-          <p className="text-xs font-medium uppercase tracking-wide text-[#68727D]">
+        <div className="min-w-0">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#7A90A8]">
             {label}
           </p>
-          <p className="mt-2 font-[family-name:var(--font-admin-display)] text-3xl text-[#0D2745]">
+          <p className="mt-3 font-[family-name:var(--font-admin-display)] text-[2rem] leading-none text-[#0B1F36]">
             {value}
           </p>
+          {hint ? (
+            <p className="mt-2 text-xs text-[#5B6B7C]">{hint}</p>
+          ) : null}
         </div>
-        <span className="rounded-lg bg-[#E4F0EB] p-2 text-[#173B6C]">
+        <span className="rounded-xl bg-[#0B1F36] p-2.5 text-white shadow-sm">
           <Icon className="h-4 w-4" />
         </span>
       </div>
+      <span className="mt-4 inline-flex items-center gap-1 text-xs font-semibold text-[#173B6C] opacity-0 transition group-hover:opacity-100">
+        Open
+        <ArrowRight className="h-3.5 w-3.5" />
+      </span>
     </Link>
   );
 }
 
 export function DashboardPage() {
-  const { database, ready } = useCms();
+  const { database, ready, mode, apiAuthenticated } = useCms();
 
   const metrics = useMemo(() => {
     if (!database) return null;
@@ -76,6 +96,7 @@ export function DashboardPage() {
         updatedAt: i.updatedAt,
         status: i.status,
         kind: 'Publication',
+        publicPath: '/publications',
       })),
       ...database.researchProjects.map((i) => ({
         id: i.id,
@@ -84,6 +105,7 @@ export function DashboardPage() {
         updatedAt: i.updatedAt,
         status: i.status,
         kind: 'Research',
+        publicPath: '/research',
       })),
       ...database.news.map((i) => ({
         id: i.id,
@@ -92,6 +114,7 @@ export function DashboardPage() {
         updatedAt: i.updatedAt,
         status: i.status,
         kind: 'News',
+        publicPath: '/news',
       })),
       ...database.events.map((i) => ({
         id: i.id,
@@ -100,6 +123,7 @@ export function DashboardPage() {
         updatedAt: i.updatedAt,
         status: i.status,
         kind: 'Event',
+        publicPath: '/events',
       })),
       ...database.people.map((i) => ({
         id: i.id,
@@ -107,7 +131,8 @@ export function DashboardPage() {
         href: `/admin/people/${i.id}`,
         updatedAt: i.updatedAt,
         status: i.status,
-        kind: 'Person',
+        kind: 'Team',
+        publicPath: '/people',
       })),
       ...database.notices.map((i) => ({
         id: i.id,
@@ -116,6 +141,7 @@ export function DashboardPage() {
         updatedAt: i.updatedAt,
         status: i.status,
         kind: 'Notice',
+        publicPath: '/notices',
       })),
     ]
       .sort(
@@ -130,107 +156,238 @@ export function DashboardPage() {
       people: database.people.length,
       upcomingEvents,
       drafts,
+      notices: database.notices.length,
+      news: database.news.length,
+      media: database.media.length,
       recentlyEdited,
     };
   }, [database]);
 
-  if (!ready || !metrics) {
-    return <p className="text-sm text-[#68727D]">Loading dashboard…</p>;
+  if (!ready) {
+    return <p className="text-sm text-[#5B6B7C]">Loading overview…</p>;
+  }
+
+  if (!apiAuthenticated || !metrics) {
+    return (
+      <div className="space-y-6">
+        <AdminPageHeader
+          eyebrow="CMS"
+          title="Overview"
+          description="Unlock the content manager to see counts and recent edits."
+        />
+        <AdminPanel className="border-[#F0D4D4] bg-[#FFF8F8] p-6 text-sm text-[#8A3B3B]">
+          CMS session is locked.{' '}
+          <Link href="/admin/system" className="font-semibold underline">
+            Unlock under System &amp; data
+          </Link>
+          .
+        </AdminPanel>
+      </div>
+    );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <h1 className="font-[family-name:var(--font-admin-display)] text-2xl text-[#0D2745]">
-          Dashboard
-        </h1>
-        <p className="mt-1 text-sm text-[#68727D]">
-          Content overview for BK School of Research — counts from your CMS
-          library, not visitor analytics.
-        </p>
-      </div>
+    <div className="space-y-8">
+      <AdminPageHeader
+        eyebrow="CMS"
+        title="Overview"
+        description={`Everything here is live site content (${mode === 'mongo' ? 'MongoDB' : 'server store'}). Counts are library items — not visitor traffic.`}
+        action={
+          <>
+            <AdminSecondaryButton href="/admin/homepage">
+              Homepage
+            </AdminSecondaryButton>
+            <AdminPrimaryButton href="/admin/news/new">
+              New article
+            </AdminPrimaryButton>
+          </>
+        }
+      />
 
-      <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
+      <section className="overflow-hidden rounded-2xl border border-[#E2E8F0] bg-[#0B1F36] p-6 text-white shadow-[0_12px_40px_rgba(11,31,54,0.18)] sm:p-8">
+        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-xl">
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/50">
+              Content manager
+            </p>
+            <h2 className="mt-2 font-[family-name:var(--font-admin-display)] text-2xl sm:text-3xl">
+              Edit once — the public site updates
+            </h2>
+            <p className="mt-3 text-sm leading-relaxed text-white/70">
+              Research, publications, news, events, notices, and the team
+              directory all share this store with the frontend.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/admin/homepage"
+              className="inline-flex items-center gap-2 rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-[#0B1F36]"
+            >
+              <Home className="h-4 w-4" />
+              Edit homepage
+            </Link>
+            <Link
+              href="/"
+              target="_blank"
+              className="inline-flex items-center gap-2 rounded-xl border border-white/25 px-4 py-2.5 text-sm font-semibold text-white hover:bg-white/10"
+            >
+              Open website
+              <ArrowRight className="h-4 w-4" />
+            </Link>
+          </div>
+        </div>
+      </section>
+
+      <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-5">
         <MetricCard
-          label="Research projects"
+          label="Research"
           value={metrics.research}
           href="/admin/research"
           icon={FlaskConical}
+          hint="/research"
         />
         <MetricCard
           label="Publications"
           value={metrics.publications}
           href="/admin/publications"
           icon={BookOpen}
+          hint="/publications"
         />
         <MetricCard
-          label="People"
+          label="Team"
           value={metrics.people}
           href="/admin/people"
           icon={Users}
+          hint="/people"
         />
         <MetricCard
           label="Upcoming events"
           value={metrics.upcomingEvents}
           href="/admin/events"
           icon={Calendar}
+          hint="/events"
         />
         <MetricCard
           label="Drafts"
           value={metrics.drafts}
-          href="/admin/publications"
+          href="/admin/news"
           icon={FileEdit}
+          hint="Not live yet"
         />
-      </div>
+      </section>
 
-      <section className="rounded-xl border border-[#D9DEE5] bg-[#F8F7F3]">
-        <div className="flex items-center gap-2 border-b border-[#D9DEE5] px-4 py-3">
-          <Clock className="h-4 w-4 text-[#173B6C]" />
-          <h2 className="text-sm font-semibold text-[#0D2745]">
-            Recently edited
-          </h2>
-        </div>
-        <ul className="divide-y divide-[#E8ECE8]">
-          {metrics.recentlyEdited.map((item) => (
-            <li key={`${item.kind}-${item.id}`}>
+      <section className="grid gap-3 sm:grid-cols-3">
+        <MetricCard
+          label="Notices"
+          value={metrics.notices}
+          href="/admin/notices"
+          icon={Megaphone}
+          hint="/notices"
+        />
+        <MetricCard
+          label="News"
+          value={metrics.news}
+          href="/admin/news"
+          icon={Newspaper}
+          hint="/news"
+        />
+        <MetricCard
+          label="Media"
+          value={metrics.media}
+          href="/admin/media"
+          icon={Image}
+        />
+      </section>
+
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr]">
+        <AdminPanel>
+          <div className="flex items-center gap-2 border-b border-[#E2E8F0] px-5 py-4">
+            <Clock className="h-4 w-4 text-[#173B6C]" />
+            <h2 className="text-sm font-semibold text-[#0B1F36]">
+              Recently updated
+            </h2>
+          </div>
+          <ul className="divide-y divide-[#EEF2F6]">
+            {metrics.recentlyEdited.length === 0 ? (
+              <li className="px-5 py-8 text-sm text-[#5B6B7C]">
+                No recent edits yet.
+              </li>
+            ) : (
+              metrics.recentlyEdited.map((item) => (
+                <li key={`${item.kind}-${item.id}`}>
+                  <Link
+                    href={item.href}
+                    className="flex flex-wrap items-center justify-between gap-2 px-5 py-3.5 transition hover:bg-[#F4F7FB]"
+                  >
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-[#0B1F36]">
+                        {item.title}
+                      </p>
+                      <p className="text-xs text-[#5B6B7C]">
+                        {item.kind} · {item.publicPath}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <StatusBadge status={item.status} />
+                      <span className="text-xs text-[#7A90A8]">
+                        {formatDateShort(item.updatedAt)}
+                      </span>
+                    </div>
+                  </Link>
+                </li>
+              ))
+            )}
+          </ul>
+        </AdminPanel>
+
+        <AdminPanel className="p-5">
+          <h2 className="text-sm font-semibold text-[#0B1F36]">Quick actions</h2>
+          <p className="mt-1 text-xs text-[#5B6B7C]">
+            Common publishing tasks
+          </p>
+          <div className="mt-4 space-y-2">
+            {[
+              {
+                href: '/admin/homepage',
+                label: 'Homepage content',
+                icon: Home,
+              },
+              {
+                href: '/admin/news/new',
+                label: 'Write a news article',
+                icon: Newspaper,
+              },
+              {
+                href: '/admin/events/new',
+                label: 'Add an event',
+                icon: Calendar,
+              },
+              {
+                href: '/admin/people/new',
+                label: 'Add a team member',
+                icon: Users,
+              },
+              {
+                href: '/admin/notices/new',
+                label: 'Post a notice',
+                icon: Megaphone,
+              },
+            ].map((action) => (
               <Link
-                href={item.href}
-                className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 hover:bg-[#FBF9F4]"
+                key={action.href}
+                href={action.href}
+                className="flex items-center gap-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3.5 py-3 text-sm font-medium text-[#0B1F36] transition hover:border-[#0B1F36]/20 hover:bg-white"
               >
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-medium text-[#0D2745]">
-                    {item.title}
-                  </p>
-                  <p className="text-xs text-[#68727D]">{item.kind}</p>
-                </div>
-                <div className="flex items-center gap-2">
-                  <StatusBadge status={item.status} />
-                  <span className="text-xs text-[#68727D]">
-                    {formatDateShort(item.updatedAt)}
-                  </span>
-                </div>
+                <span className="rounded-lg bg-[#0B1F36] p-1.5 text-white">
+                  <action.icon className="h-3.5 w-3.5" />
+                </span>
+                {action.label}
+                <ArrowRight className="ml-auto h-3.5 w-3.5 text-[#7A90A8]" />
               </Link>
-            </li>
-          ))}
-        </ul>
-      </section>
-
-      <section className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          { href: '/admin/news/new', label: 'Write news' },
-          { href: '/admin/publications/new', label: 'Add publication' },
-          { href: '/admin/homepage', label: 'Edit homepage' },
-          { href: '/admin/navigation', label: 'Edit navigation' },
-        ].map((action) => (
-          <Link
-            key={action.href}
-            href={action.href}
-            className="rounded-xl border border-dashed border-[#C5DCD4] bg-white/60 px-4 py-4 text-sm font-medium text-[#173B6C] hover:border-[#173B6C] hover:bg-[#E4F0EB]"
-          >
-            {action.label}
-          </Link>
-        ))}
-      </section>
+            ))}
+          </div>
+        </AdminPanel>
+      </div>
     </div>
   );
 }

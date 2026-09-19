@@ -27,8 +27,8 @@ const SECTION_IDS: Record<string, string> = {
   alumni: 'alumni',
 };
 
-export default function PeoplePage() {
-  const people = getPeople();
+export default async function PeoplePage() {
+  const people = await getPeople();
   const director =
     people.find((person) => person.category === 'executive-director') ??
     people[0];
@@ -122,25 +122,26 @@ export default function PeoplePage() {
               as="h2"
               className="text-3xl text-paper sm:text-4xl"
             >
-              Join the work
+              Apply to join the committee
             </EditorialHeading>
             <p className="mx-auto mt-3 max-w-xl text-sm leading-relaxed text-paper/75 sm:text-base">
-              Explore openings, fellowships, and ways to collaborate with BK
-              School of Research.
+              Want to join BK School of Research as a researcher or
+              organisational collaborator? Submit a full application — no
+              account needed until you are approved.
             </p>
             <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
-              <Button href="/people/career" variant="onInk" size="lg">
-                Career at BKSR
+              <Button href="/join" variant="onInk" size="lg">
+                Apply to this organisation
               </Button>
-              <Button href="/contact" variant="onInkSecondary" size="lg">
-                Contact
+              <Button href="/join#join-application-form" variant="onInkSecondary" size="lg">
+                Apply as a researcher
               </Button>
             </div>
             <ArrowLink
-              href="/about"
+              href="/people/career"
               className="mt-6 justify-center text-paper/80 hover:text-paper"
             >
-              About BKSR
+              Career at BKSR
             </ArrowLink>
           </div>
         </Container>

@@ -13,10 +13,10 @@ Source of truth: `src/content/seed/navigation.ts` → `getNavigation()` in `src/
 | Research | `/research` | Ongoing, Completed (`/research/previous`) — Areas & Grants remain reachable from Research hub |
 | Publications | `/publications` | Policy Briefs, Working Papers, Annual Reports, Journals, Blogs |
 | Activities | `/activities` | Seminar & Training, Campaigns, Research Talk, Innovation Showcasing |
-| News & Events | `/events` | Notice, Events |
+| News & Events | `/news-events` | Notices, Events |
 | Contact | `/contact` | — |
 
-Header CTAs: **Explore Research** (`/research`), **Contact** (`/contact`). Search opens `SearchOverlay`.
+Header CTAs: **Contact** (`/contact`) as the solid action. Search opens `SearchOverlay`. Account icon opens member access. Research entry stays in primary nav (hub + Ongoing / Completed). Homepage hero may still use **Explore Research** → `/research`.
 
 ## Secondary / footer
 

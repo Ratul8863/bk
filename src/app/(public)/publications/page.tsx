@@ -12,6 +12,7 @@ import {
   getPublications,
   getResearchAreas,
 } from '@/lib/content/queries';
+import { pageHeroMedia } from '@/lib/content/page-heroes';
 import { getPublicationCoverUrl } from '@/lib/content/prototype-media';
 import { PUBLICATION_TYPE_LABELS } from '@/lib/public/labels';
 import { buildPageMetadata } from '@/lib/seo/metadata';
@@ -22,10 +23,10 @@ export const metadata = buildPageMetadata(
   '/publications',
 );
 
-export default function PublicationsPage() {
-  const publications = getPublications();
+export default async function PublicationsPage() {
+  const publications = await getPublications();
   const featured =
-    getPublicationById('pub-kumar-remittances-poverty-alleviation-2019') ??
+    await getPublicationById('pub-kumar-remittances-poverty-alleviation-2019') ??
     publications[0];
   const featuredCover = featured ? getPublicationCoverUrl(featured) : null;
 
@@ -35,6 +36,7 @@ export default function PublicationsPage() {
         eyebrow="Library"
         title="Publications"
         description="Evidence from BKSR — journals, chapters, reports, and commentary."
+        imageSrc={pageHeroMedia.publications}
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Publications' }]}
         actions={
           <>
@@ -103,7 +105,7 @@ export default function PublicationsPage() {
         <Container>
           <PublicationFilters
             publications={publications}
-            areas={getResearchAreas()}
+            areas={await getResearchAreas()}
           />
         </Container>
       </Section>

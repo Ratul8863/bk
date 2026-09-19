@@ -1,22 +1,22 @@
 import { notFound } from 'next/navigation';
-import Link from 'next/link';
 import { PersonProfile } from '@/components/editorial/PersonProfile';
-import { PersonPortrait } from '@/components/editorial/PersonPortrait';
-import { PageHero } from '@/components/layout/PageHero';
-import { Container } from '@/components/ui/Container';
-import { EmptyState } from '@/components/ui/EmptyState';
-import { Section } from '@/components/ui/Section';
+import { PersonProfileClaimBridge } from '@/components/editorial/PersonProfileClaimBridge';
+import { PeopleCategoryHub } from '@/components/home/PeopleCategoryHub';
 import {
   getDemoPeopleSlugs,
   getDemoPersonBySlug,
   peopleDemoRoster,
   PEOPLE_DEMO_SECTION_COPY,
 } from '@/content/seed/people-demo';
+import { prototypeMedia } from '@/lib/content/prototype-media';
 import { RESERVED_PEOPLE_CATEGORY_SLUGS } from '@/lib/content/people-slugs';
 import {
   getPeople,
   getPersonBySlug,
   getPublications,
+  getInvolvementsForPerson,
+  getRoleHistoryForPerson,
+  getAchievementsProfileForPerson,
 } from '@/lib/content/queries';
 import { PERSON_CATEGORY_META } from '@/lib/public/labels';
 import { buildPageMetadata } from '@/lib/seo/metadata';
@@ -30,10 +30,10 @@ function researchItemsFromInterests(interests?: string[]) {
   }));
 }
 
-function publicationsForPerson(name: string) {
+async function publicationsForPerson(name: string) {
   const needle = name.split(/\s+/).filter(Boolean).at(-1)?.toLowerCase();
   if (!needle) return [];
-  return getPublications()
+  return (await getPublications())
     .filter((pub) =>
       pub.authors.some((author) => author.toLowerCase().includes(needle)),
     )
@@ -48,7 +48,7 @@ function publicationsForPerson(name: string) {
 }
 
 export async function generateStaticParams() {
-  const people = getPeople({ includeDrafts: true }).filter(
+  const people = (await getPeople({ includeDrafts: true })).filter(
     (person) => !RESERVED_PEOPLE_CATEGORY_SLUGS[person.slug],
   );
   return [
@@ -66,7 +66,7 @@ export async function generateMetadata({ params }: Props) {
     return buildPageMetadata(meta.label, meta.description, `/people/${slug}`);
   }
 
-  const person = getPersonBySlug(slug, { includeDrafts: true });
+  const person = await getPersonBySlug(slug, { includeDrafts: true });
   if (person) {
     return buildPageMetadata(
       person.name,
@@ -92,95 +92,50 @@ export default async function PeopleSlugPage({ params }: Props) {
 
   const category = RESERVED_PEOPLE_CATEGORY_SLUGS[slug];
   if (category) {
-    const members = getPeople({ category });
+    const members = await getPeople({ category });
     const demoMembers = peopleDemoRoster.filter(
       (person) => person.category === category,
     );
     const meta = PERSON_CATEGORY_META[category];
-    const hasMembers = members.length > 0 || demoMembers.length > 0;
+
+    const hubPeople = [
+      ...members.map((member) => ({
+        id: member.id,
+        href: `/people/${member.slug}`,
+        name: member.name,
+        role: member.role,
+        imageSrc:
+          member.photoUrl && !member.photoUrl.includes('/prototype/')
+            ? member.photoUrl
+            : (member.photoUrl ?? prototypeMedia.directorPortrait.url),
+        description:
+          member.shortBio?.trim() ||
+          member.bio?.split(/\n\s*\n/)[0]?.replace(/\s+/g, ' ').trim() ||
+          `${member.name} serves as ${member.role} at BK School of Research.`,
+      })),
+      ...demoMembers.map((member) => ({
+        id: member.id,
+        href: `/people/${member.slug}`,
+        name: member.name,
+        role: member.role,
+        imageSrc: member.imageSrc,
+        description: member.description,
+      })),
+    ];
 
     return (
-      <>
-        <PageHero
-          title={meta.label}
-          description={meta.description}
-          breadcrumbs={[
-            { label: 'Home', href: '/' },
-            { label: 'People', href: '/people' },
-            { label: meta.label },
-          ]}
-        />
-        <Section>
-          <Container>
-            {hasMembers ? (
-              <ul className="divide-y divide-border border-y border-border">
-                {members.map((member) => (
-                  <li key={member.id} className="flex gap-5 py-6">
-                    {member.photoUrl ? (
-                      <Link
-                        href={`/people/${member.slug}`}
-                        className="w-16 shrink-0 sm:w-20"
-                      >
-                        <PersonPortrait
-                          name={member.name}
-                          src={member.photoUrl}
-                          aspect="square"
-                          framed
-                        />
-                      </Link>
-                    ) : null}
-                    <div className="min-w-0">
-                      <Link
-                        href={`/people/${member.slug}`}
-                        className="font-display text-2xl text-ink hover:text-accent"
-                      >
-                        {member.name}
-                      </Link>
-                      <p className="mt-1 text-sm text-accent">{member.role}</p>
-                    </div>
-                  </li>
-                ))}
-                {demoMembers.map((member) => (
-                  <li key={member.id} className="flex gap-5 py-6">
-                    <Link
-                      href={`/people/${member.slug}`}
-                      className="w-16 shrink-0 sm:w-20"
-                    >
-                      <PersonPortrait
-                        name={member.name}
-                        src={member.imageSrc}
-                        aspect="square"
-                        framed
-                      />
-                    </Link>
-                    <div className="min-w-0">
-                      <Link
-                        href={`/people/${member.slug}`}
-                        className="font-display text-2xl text-ink hover:text-accent"
-                      >
-                        {member.name}
-                      </Link>
-                      <p className="mt-1 text-sm text-accent">{member.role}</p>
-                    </div>
-                  </li>
-                ))}
-              </ul>
-            ) : (
-              <EmptyState
-                title="No profiles published yet"
-                description="This category is reserved for future listings."
-              />
-            )}
-          </Container>
-        </Section>
-      </>
+      <PeopleCategoryHub
+        title={meta.label}
+        description={meta.description}
+        members={hubPeople}
+      />
     );
   }
 
-  const person = getPersonBySlug(slug);
+  const person = await getPersonBySlug(slug);
   if (person) {
     const related = [
-      ...getPeople()
+      ...((await getPeople())
         .filter((item) => item.id !== person.id)
         .slice(0, 2)
         .map((item) => ({
@@ -188,7 +143,7 @@ export default async function PeopleSlugPage({ params }: Props) {
           name: item.name,
           role: item.role,
           imageSrc: item.photoUrl ?? '/media/prototype/bksr-portrait-director.jpg',
-        })),
+        }))),
       ...peopleDemoRoster
         .filter((item) => item.category === person.category)
         .slice(0, 3)
@@ -200,10 +155,14 @@ export default async function PeopleSlugPage({ params }: Props) {
         })),
     ].slice(0, 3);
 
-    const personPubs = publicationsForPerson(person.name);
+    const personPubs = await publicationsForPerson(person.name);
+    const involvements = await getInvolvementsForPerson(person.id);
+    const roleHistory = await getRoleHistoryForPerson(person.id);
+    const achievements = await getAchievementsProfileForPerson(person.id);
     return (
-      <PersonProfile
-        person={{
+      <PersonProfileClaimBridge
+        personId={person.id}
+        initialPerson={{
           name: person.name,
           role: person.role,
           categoryLabel: PERSON_CATEGORY_META[person.category]?.label,
@@ -213,9 +172,17 @@ export default async function PeopleSlugPage({ params }: Props) {
           shortBio: person.shortBio,
           skills: person.researchInterests,
           researchItems:
-            personPubs.length > 0
-              ? personPubs
-              : researchItemsFromInterests(person.researchInterests),
+            involvements.length > 0
+              ? []
+              : personPubs.length > 0
+                ? personPubs
+                : researchItemsFromInterests(person.researchInterests),
+          involvements,
+          roleHistory,
+          verifiedAchievements: achievements.verified,
+          memberAchievements: achievements.member,
+          verificationCode: person.verificationCode,
+          appointmentYear: person.appointmentYear,
         }}
         related={related}
       />

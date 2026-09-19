@@ -14,6 +14,10 @@ export const people: Person[] = [
     name: 'Bezon Kumar',
     role: 'Executive Director',
     category: 'executive-director',
+    email: 'exe_dir@bkschoolofresearch.org',
+    claimStatus: 'unclaimed',
+    verificationCode: 'BKSR-00001M',
+    appointmentYear: '2025-2026',
     affiliation: 'Lecturer in Economics, Rabindra University, Bangladesh',
     shortBio:
       'Bezon Kumar is an experienced researcher and educator with expertise in development economics, remittances, climate perception, and evidence-based policy. He is passionate about building research capacity, mentoring young scholars, and creating long-term value for communities and institutions. As Executive Director of BK School of Research and Lecturer in Economics at Rabindra University, Bangladesh, he leads programmes that connect scholarship with public practice.',

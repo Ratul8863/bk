@@ -1,3 +1,4 @@
+import { SiteCtaGate } from '@/components/layout/SiteCtaGate';
 import { SiteFooter } from '@/components/layout/SiteFooter';
 import { SiteHeader } from '@/components/layout/SiteHeader';
 import { SkipLink } from '@/components/layout/SkipLink';
@@ -7,9 +8,9 @@ type PublicShellProps = {
   children: React.ReactNode;
 };
 
-export function PublicShell({ children }: PublicShellProps) {
-  const settings = getSiteSettings();
-  const navigation = getNavigation();
+export async function PublicShell({ children }: PublicShellProps) {
+  const settings = await getSiteSettings();
+  const navigation = await getNavigation();
 
   return (
     <>
@@ -21,6 +22,7 @@ export function PublicShell({ children }: PublicShellProps) {
       <main id="main-content" className="min-w-0 flex-1 overflow-x-clip">
         {children}
       </main>
+      <SiteCtaGate />
       <SiteFooter
         settings={settings}
         footerNav={navigation.footer}

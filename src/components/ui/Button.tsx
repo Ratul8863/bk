@@ -9,7 +9,7 @@ const variants = {
     'border border-ink/20 bg-transparent text-ink hover:border-ink hover:bg-ink hover:text-white',
   ghost: 'bg-transparent text-accent hover:bg-surface',
   ink: 'bg-ink text-white hover:bg-accent',
-  onInk: 'bg-paper text-ink hover:bg-white',
+  onInk: 'bg-paper !text-ink hover:bg-white hover:!text-ink',
   onInkSecondary:
     'border border-paper/45 bg-transparent text-paper hover:border-paper hover:bg-paper/10',
   tertiary:
@@ -55,7 +55,7 @@ function buttonClasses(
 ) {
   return cn(
     'group/btn inline-flex items-center justify-center font-sans font-semibold tracking-[0.04em]',
-    'rounded-none transition-[color,background-color,border-color] duration-200',
+    'rounded-full transition-[color,background-color,border-color] duration-200',
     'disabled:pointer-events-none disabled:opacity-50',
     'focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-accent',
     variants[variant],
@@ -97,6 +97,7 @@ export function Button(props: ButtonProps) {
           className={classes}
           target="_blank"
           rel="noopener noreferrer"
+          data-button=""
           onClick={onClick}
         >
           {content}
@@ -104,7 +105,7 @@ export function Button(props: ButtonProps) {
       );
     }
     return (
-      <Link href={href} className={classes} onClick={onClick}>
+      <Link href={href} className={classes} data-button="" onClick={onClick}>
         {content}
       </Link>
     );
@@ -130,6 +131,7 @@ export function Button(props: ButtonProps) {
     <button
       type={type}
       className={classes}
+      data-button=""
       disabled={disabled}
       onClick={onClick}
       onBlur={onBlur}

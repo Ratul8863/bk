@@ -10,8 +10,8 @@ export const metadata = buildPageMetadata(
   '/privacy',
 );
 
-export default function PrivacyPage() {
-  const settings = getSiteSettings();
+export default async function PrivacyPage() {
+  const settings = await getSiteSettings();
   return (
     <>
       <PageHero

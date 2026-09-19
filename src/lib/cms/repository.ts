@@ -27,6 +27,14 @@ const COLLECTION_KEYS: ContentCollectionKey[] = [
   'galleryAlbums',
   'galleryImages',
   'media',
+  'personContentLinks',
+  'registrationForms',
+  'registrationEntries',
+  'roleAssignments',
+  'joinApplications',
+  'achievements',
+  'achievementAssignments',
+  'memberAchievements',
 ];
 
 function deepClone<T>(value: T): T {
@@ -135,11 +143,28 @@ export function create<K extends ContentCollectionKey>(
   database: ContentDatabase = getDatabase(),
 ): { database: ContentDatabase; item: CollectionEntityMap[K] } {
   const timestamp = nowIso();
+  let prepared = { ...input } as Record<string, unknown>;
+
+  if (collection === 'people') {
+    const personInput = prepared as Partial<import('@/types/content').Person>;
+    if (!personInput.verificationCode) {
+      let max = 0;
+      for (const person of database.people) {
+        const match = person.verificationCode?.match(/BKSR-(\d+)M/i);
+        if (match) max = Math.max(max, Number(match[1]));
+      }
+      prepared.verificationCode = `BKSR-${String(max + 1).padStart(5, '0')}M`;
+    }
+    if (personInput.email && !personInput.claimStatus) {
+      prepared.claimStatus = 'unclaimed';
+    }
+  }
+
   const item = {
-    ...input,
-    id: input.id ?? uuidv4(),
-    createdAt: input.createdAt ?? timestamp,
-    updatedAt: input.updatedAt ?? timestamp,
+    ...prepared,
+    id: (prepared.id as string | undefined) ?? uuidv4(),
+    createdAt: (prepared.createdAt as string | undefined) ?? timestamp,
+    updatedAt: (prepared.updatedAt as string | undefined) ?? timestamp,
   } as CollectionEntityMap[K];
 
   const next = deepClone(database);
@@ -180,6 +205,47 @@ export function remove<K extends ContentCollectionKey>(
   (next[collection] as CollectionEntityMap[K][]) = list.filter(
     (item) => item.id !== id,
   );
+
+  if (collection === 'people') {
+    next.personContentLinks = next.personContentLinks.filter(
+      (link) => link.personId !== id,
+    );
+    next.roleAssignments = next.roleAssignments.filter(
+      (row) => row.personId !== id,
+    );
+    next.achievementAssignments = next.achievementAssignments.filter(
+      (row) => row.personId !== id,
+    );
+    next.memberAchievements = next.memberAchievements.filter(
+      (row) => row.personId !== id,
+    );
+  } else if (collection === 'events') {
+    next.personContentLinks = next.personContentLinks.filter(
+      (link) => !(link.entityType === 'event' && link.entityId === id),
+    );
+    const formIds = next.registrationForms
+      .filter((form) => form.entityType === 'event' && form.entityId === id)
+      .map((form) => form.id);
+    next.registrationForms = next.registrationForms.filter(
+      (form) => !(form.entityType === 'event' && form.entityId === id),
+    );
+    next.registrationEntries = next.registrationEntries.filter(
+      (entry) => !formIds.includes(entry.formId),
+    );
+  } else if (collection === 'researchProjects') {
+    next.personContentLinks = next.personContentLinks.filter(
+      (link) => !(link.entityType === 'research' && link.entityId === id),
+    );
+  } else if (collection === 'publications') {
+    next.personContentLinks = next.personContentLinks.filter(
+      (link) => !(link.entityType === 'publication' && link.entityId === id),
+    );
+  } else if (collection === 'activities') {
+    next.personContentLinks = next.personContentLinks.filter(
+      (link) => !(link.entityType === 'activity' && link.entityId === id),
+    );
+  }
+
   saveDatabase(next);
   return next;
 }

@@ -52,12 +52,28 @@ function buildIndex(database: ContentDatabase): SearchResult[] {
   }
 
   for (const project of database.researchProjects) {
+    const href =
+      project.url?.trim() ||
+      (() => {
+        for (const id of project.publicationIds ?? []) {
+          const pub = database.publications.find((item) => item.id === id);
+          if (!pub) continue;
+          if (pub.url?.trim()) return pub.url.trim();
+          if (pub.doi?.trim()) {
+            const doi = pub.doi
+              .trim()
+              .replace(/^https?:\/\/(dx\.)?doi\.org\//i, '');
+            if (doi) return `https://doi.org/${doi}`;
+          }
+        }
+        return '/research';
+      })();
     results.push({
       id: project.id,
       category: 'research',
       title: project.title,
       slug: project.slug,
-      href: `/research/${project.slug}`,
+      href,
       excerpt: project.summary,
       keywords: [
         project.researchStatus,

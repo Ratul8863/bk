@@ -5,7 +5,9 @@ import { Container } from '@/components/ui/Container';
 import { Section } from '@/components/ui/Section';
 import { RichText } from '@/components/ui/RichText';
 import { ImageFrame } from '@/components/ui/ImageFrame';
-import { getActivities, getEvents } from '@/lib/content/queries';
+import { pageHeroMedia } from '@/lib/content/page-heroes';
+import { getActivities, getEvents, getLinkedPeopleForEntity } from '@/lib/content/queries';
+import { InvolvedPeople } from '@/components/editorial/InvolvedPeople';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 import { ACTIVITY_ROUTE_META } from '@/lib/public/labels';
 import { formatDate } from '@/lib/utils';
@@ -14,15 +16,16 @@ type Props = {
   routeSlug: string;
 };
 
-export function ActivityProgrammePage({ routeSlug }: Props) {
+export async function ActivityProgrammePage({ routeSlug }: Props) {
   const meta = ACTIVITY_ROUTE_META.find((item) => item.routeSlug === routeSlug);
   if (!meta) notFound();
 
-  const activity = getActivities().find((item) => item.type === meta.type);
+  const activity = (await getActivities()).find((item) => item.type === meta.type);
   if (!activity) notFound();
 
+  const allEvents = await getEvents();
   const events = (activity.relatedEventIds ?? [])
-    .map((id) => getEvents().find((event) => event.id === id))
+    .map((id) => allEvents.find((event) => event.id === id))
     .filter(Boolean);
 
   return (
@@ -31,13 +34,14 @@ export function ActivityProgrammePage({ routeSlug }: Props) {
         eyebrow="Activities"
         title={activity.title}
         description={activity.summary}
+        imageSrc={activity.imageUrl ?? pageHeroMedia.activities}
         breadcrumbs={[
           { label: 'Home', href: '/' },
           { label: 'Activities', href: '/activities' },
           { label: activity.title },
         ]}
       />
-      <Section>
+      <Section tone="white">
         <Container>
           <div className="grid gap-10 lg:grid-cols-12 lg:gap-12">
             {activity.imageUrl ? (
@@ -105,6 +109,14 @@ export function ActivityProgrammePage({ routeSlug }: Props) {
                   </ul>
                 </div>
               ) : null}
+              <div className="mt-10">
+                <InvolvedPeople
+                  entityType="activity"
+                  entityId={activity.id}
+                  initialPeople={await getLinkedPeopleForEntity('activity', activity.id)}
+                  title="People involved"
+                />
+              </div>
             </div>
           </div>
         </Container>
@@ -113,9 +125,9 @@ export function ActivityProgrammePage({ routeSlug }: Props) {
   );
 }
 
-export function activityMetadata(routeSlug: string) {
+export async function activityMetadata(routeSlug: string) {
   const meta = ACTIVITY_ROUTE_META.find((item) => item.routeSlug === routeSlug);
-  const activity = getActivities().find((item) => item.type === meta?.type);
+  const activity = (await getActivities()).find((item) => item.type === meta?.type);
   return buildPageMetadata(
     activity?.title ?? meta?.label ?? 'Activity',
     activity?.summary ??
