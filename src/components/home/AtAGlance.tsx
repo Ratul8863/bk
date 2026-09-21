@@ -21,7 +21,7 @@ type AtAGlanceProps = {
 };
 
 /**
- * Scaled ~72% of Figma 189:374 so the stack fits the 1320px site container.
+ * Scaled ~72% of Figma 189:374 so the stack fits the site container.
  * Offsets stay the same on all breakpoints — width accounts for fan depth
  * so nothing clips at the viewport edge.
  */

@@ -21,12 +21,6 @@ export default function GalleryPage() {
         description="Photographs and visual records from BKSR programmes and community life."
         imageSrc={pageHeroMedia.gallery}
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Gallery' }]}
-        actions={
-          <>
-            <ArrowLink href="/events">Browse events</ArrowLink>
-            <ArrowLink href="/activities">View activities</ArrowLink>
-          </>
-        }
       />
       <Section tone="white">
         <Container>

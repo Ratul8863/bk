@@ -5,6 +5,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { Section } from '@/components/ui/Section';
 import { PublicationFilters } from '@/components/public/PublicationFilters';
 import { pageHeroMedia } from '@/lib/content/page-heroes';
+import { prototypeMedia } from '@/lib/content/prototype-media';
 import {
   getPublications,
   getResearchAreas,
@@ -41,25 +42,27 @@ export async function PublicationTypePage({
 }: Props) {
   const publications = (await getPublications()).filter((item) => item.type === type);
   const label = PUBLICATION_TYPE_LABELS[type];
+  const isPress = type === 'press-coverage';
 
   return (
     <>
       <PageHero
-        eyebrow="Library"
+        eyebrow={isPress ? 'Press' : 'Library'}
         title={title}
         description={description}
-        imageSrc={pageHeroMedia.publications}
-        breadcrumbs={[
-          { label: 'Home', href: '/' },
-          { label: 'Publications', href: '/publications' },
-          { label: title },
-        ]}
-        actions={
-          <>
-            <ArrowLink href="/publications">All publications</ArrowLink>
-            <ArrowLink href="/publications/journals">Journals</ArrowLink>
-            <ArrowLink href="/publications/blogs">Blogs</ArrowLink>
-          </>
+        imageSrc={
+          isPress
+            ? prototypeMedia.mediaSpotlight.url
+            : pageHeroMedia.publications
+        }
+        breadcrumbs={
+          isPress
+            ? [{ label: 'Home', href: '/' }, { label: title }]
+            : [
+                { label: 'Home', href: '/' },
+                { label: 'Publications', href: '/publications' },
+                { label: title },
+              ]
         }
       />
       <Section tone="white">

@@ -33,6 +33,16 @@ const nextConfig: NextConfig = {
       destination: "/activities/research-talks",
       permanent: true,
     },
+    {
+      source: "/activities/innovation-showcasing",
+      destination: "/activities",
+      permanent: false,
+    },
+    {
+      source: "/publications/blogs",
+      destination: "/publications/opinions",
+      permanent: true,
+    },
   ],
 };
 

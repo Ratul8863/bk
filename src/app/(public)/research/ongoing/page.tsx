@@ -26,8 +26,6 @@ export default async function Page() {
       projects={projects}
       emptyTitle="No projects in this list"
       emptyDescription="No ongoing projects are present in the current portfolio."
-      peerHref="/research/previous"
-      peerLabel="Completed"
     />
   );
 }

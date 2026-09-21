@@ -19,7 +19,7 @@ import { buildPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = buildPageMetadata(
   'Publications',
-  'Journal articles, chapters, reports, and other outputs from BK School of Research.',
+  'BK School of Research publishes peer-reviewed articles in scholarly journals, along with policy briefs, research reports, and working paper series to reach practitioners and policymakers directly, ensuring our research translates into real-world use.',
   '/publications',
 );
 
@@ -35,22 +35,9 @@ export default async function PublicationsPage() {
       <PageHero
         eyebrow="Library"
         title="Publications"
-        description="Evidence from BKSR — journals, chapters, reports, and commentary."
+        description="BK School of Research publishes peer-reviewed articles in scholarly journals, along with policy briefs, research reports, and working paper series to reach practitioners and policymakers directly, ensuring our research translates into real-world use."
         imageSrc={pageHeroMedia.publications}
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Publications' }]}
-        actions={
-          <>
-            <ArrowLink href="/publications/policy-briefs">Policy Briefs</ArrowLink>
-            <ArrowLink href="/publications/working-papers">
-              Working Papers
-            </ArrowLink>
-            <ArrowLink href="/publications/journals">Journals</ArrowLink>
-            <ArrowLink href="/publications/blogs">Blogs</ArrowLink>
-            <ArrowLink href="/publications/annual-reports">
-              Annual reports
-            </ArrowLink>
-          </>
-        }
       />
 
       {featured && featuredCover ? (

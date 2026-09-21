@@ -2,7 +2,7 @@ import Link from 'next/link';
 import { BksrInMedia } from '@/components/home/BksrInMedia';
 import { CollaborationOnRecord } from '@/components/home/CollaborationOnRecord';
 import { FocusAreasCarousel } from '@/components/home/FocusAreasCarousel';
-import { FromTheLibrary } from '@/components/home/FromTheLibrary';
+import { OurResearch } from '@/components/home/OurResearch';
 import { HeroSlideshow } from '@/components/home/HeroSlideshow';
 import { MessageFromExecutive } from '@/components/home/MessageFromExecutive';
 import { NoticesAndEvents } from '@/components/home/NoticesAndEvents';
@@ -25,10 +25,8 @@ import {
   getNotices,
   getPeople,
   getPersonById,
-  getPublicationById,
   getPublications,
   getResearchAreas,
-  getResearchProjectById,
   getResearchProjects,
   getSiteSettings,
 } from '@/lib/content/queries';
@@ -41,7 +39,8 @@ import {
   ABOUT_HEADLINE,
   ABOUT_OVERVIEW_IDENTITY,
 } from '@/content/about-hub';
-import { withResearchExternalUrls } from '@/lib/content/research-links';
+import { withResearchExternalUrls, researchProjectVenueLine } from '@/lib/content/research-links';
+import { publicationCardSupportingLine } from '@/lib/content/publication-card';
 import { buildPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = buildPageMetadata(
@@ -89,8 +88,12 @@ export default async function HomePage() {
     allPublications,
   );
   const opinionPublications = await getPublications({ type: 'opinion' });
+  const pressCoverage = await getPublications({ type: 'press-coverage' });
 
   const archiveVisuals = [
+    ...pressCoverage
+      .map((item) => item.coverImageUrl)
+      .filter((url): url is string => Boolean(url)),
     ...opinionPublications
       .map((item) => item.coverImageUrl)
       .filter((url): url is string => Boolean(url)),
@@ -107,43 +110,40 @@ export default async function HomePage() {
     .filter((stat) => stat.verified)
     .sort((a, b) => a.order - b.order);
 
-  const featuredPublications = (
-    await Promise.all(
-      homepage.featuredPublicationIds.map((id) => getPublicationById(id)),
-    )
-  ).filter((item): item is NonNullable<typeof item> => Boolean(item));
-  const libraryPool =
-    featuredPublications.length >= 2
-      ? featuredPublications
-      : [
-          ...featuredPublications,
-          ...allPublications.filter(
-            (item) => !featuredPublications.some((f) => f.id === item.id),
-          ),
-        ];
-  const libraryFeatured = libraryPool.slice(0, 2);
-  const libraryFeaturedIds = new Set(libraryFeatured.map((item) => item.id));
-  const librarySidebar = allPublications
-    .filter((item) => !libraryFeaturedIds.has(item.id))
+  const featuredByConfig = homepage.featuredResearchProjectIds
+    .map((id) => researchProjects.find((p) => p.id === id))
+    .filter((item): item is NonNullable<typeof item> => Boolean(item));
+
+  const showcaseRank = (p: (typeof researchProjects)[number]) => {
+    let score = 0;
+    if (p.researchStatus === 'completed') score += 10;
+    if (p.featuredImageUrl?.trim()) score += 6;
+    if ((p.leadAuthorNames?.length ?? 0) > 0) score += 3;
+    if (researchProjectVenueLine(p) || p.venue?.trim()) score += 3;
+    if (p.url?.trim()) score += 2;
+    return score;
+  };
+
+  const byShowcase = (
+    a: (typeof researchProjects)[number],
+    b: (typeof researchProjects)[number],
+  ) =>
+    showcaseRank(b) - showcaseRank(a) || (b.year ?? 0) - (a.year ?? 0);
+
+  /** Admin picks first (re-ranked for strength), then remaining strong items. */
+  const researchShowcasePool = [
+    ...[...featuredByConfig].sort(byShowcase),
+    ...[...researchProjects]
+      .filter((p) => !featuredByConfig.some((f) => f.id === p.id))
+      .sort(byShowcase),
+  ];
+  const researchFeatured = researchShowcasePool.slice(0, 2);
+  const researchFeaturedIds = new Set(researchFeatured.map((item) => item.id));
+  const researchSidebar = researchShowcasePool
+    .filter((item) => !researchFeaturedIds.has(item.id))
     .slice(0, 3);
 
-  const featuredProject =
-    (
-      await Promise.all(
-        homepage.featuredResearchProjectIds.map((id) =>
-          getResearchProjectById(id),
-        ),
-      )
-    )
-      .map((item) =>
-        item
-          ? withResearchExternalUrls([item], allPublications)[0]
-          : undefined,
-      )
-      .find((item): item is NonNullable<typeof item> => Boolean(item)) ??
-    researchProjects[0];
-
-  const mediaCoverage = opinionPublications;
+  const mediaCoverage = pressCoverage;
 
   const people = await getPeople();
   const director =
@@ -259,7 +259,7 @@ export default async function HomePage() {
       href: '/activities/capacity-building',
       title: 'Capacity Building',
       summary:
-        'Growing research talent through training, funding, and mentorship.',
+        'Training workshops, fellowships and grants, and mentorship across career stages.',
       imageSrc:
         activities.find((item) => item.type === 'capacity-building')?.imageUrl ??
         archiveVisuals[0] ??
@@ -269,7 +269,7 @@ export default async function HomePage() {
       href: '/activities/research-talks',
       title: 'Policy & Academic Engagement',
       summary:
-        'Connecting research to policy through dialogue, dissemination, and partnership.',
+        'Policy dialogues, evidence briefings, seminars, and academic partnerships.',
       imageSrc:
         activities.find((item) => item.type === 'research-talk')?.imageUrl ??
         archiveVisuals[1] ??
@@ -279,7 +279,7 @@ export default async function HomePage() {
       href: '/activities/awareness-campaigns',
       title: 'Community & Social Impact',
       summary:
-        'Translating research into outreach and impact for local communities.',
+        'Field studies, outreach, and civil-society collaboration grounded in communities.',
       imageSrc:
         activities.find((item) => item.type === 'awareness-campaign')
           ?.imageUrl ??
@@ -292,7 +292,7 @@ export default async function HomePage() {
     id: item.id,
     href: `/publications/${item.slug}`,
     title: item.title,
-    summary: item.abstract ?? item.citation,
+    summary: publicationCardSupportingLine(item) ?? undefined,
     imageUrl:
       item.coverImageUrl ??
       archiveVisuals[index] ??
@@ -380,21 +380,21 @@ export default async function HomePage() {
                   id: 'capacity-building',
                   title: 'Capacity Building',
                   description:
-                    'Training, funding, and mentorship — shaping the next generation of scholars.',
+                    'Training workshops, fellowships and grants, and structured mentorship.',
                   href: '/activities/capacity-building',
                 },
                 {
                   id: 'policy-academic',
                   title: 'Policy & Academic Engagement',
                   description:
-                    'Connecting scholars, shaping policy, building global partnerships.',
+                    'Policy dialogues, evidence briefings, seminars, and global partnerships.',
                   href: '/activities/research-talks',
                 },
                 {
                   id: 'community-impact',
                   title: 'Community & Social Impact',
                   description:
-                    'Studies in the field, impact in the community.',
+                    'Field studies, outreach, and impact with local communities.',
                   href: '/activities/awareness-campaigns',
                 },
               ]}
@@ -432,67 +432,14 @@ export default async function HomePage() {
         }))}
       />
 
-      {/* Temporarily hidden — featured Focus project strip */}
-      {false && featuredProject ? (
-        <Section tone="white" className="border-t border-border">
-          <Container>
-            <div className="grid items-stretch gap-8 lg:grid-cols-2 lg:gap-10">
-              <ImageFrame
-                src={
-                  featuredProject.featuredImageUrl ??
-                  archiveVisuals[1] ??
-                  prototypeMedia.researchField.url
-                }
-                alt=""
-                aspect="video"
-                sizes="(max-width: 1024px) 100vw, 50vw"
-                frameClassName="border-0"
-                className="object-cover"
-              />
-              <div className="flex min-h-0 flex-col justify-between gap-10 lg:min-h-full">
-                <div>
-                  <p className="font-sans text-base text-muted">Focus</p>
-                  <EditorialHeading as="h2" size="md" className="mt-1">
-                    {featuredProject.title}
-                  </EditorialHeading>
-                  <p className="mt-5 max-w-xl text-base leading-relaxed text-muted sm:text-lg">
-                    {featuredProject.summary}
-                  </p>
-                </div>
-                <div className="flex flex-wrap items-end justify-between gap-4">
-                  <p className="text-base text-ink">
-                    {featuredProject.researchStatus === 'completed'
-                      ? 'Completed'
-                      : 'Ongoing'}
-                    {featuredProject.year ? ` · ${featuredProject.year}` : null}
-                  </p>
-                  <Button
-                    href={
-                      featuredProject.url?.trim() ||
-                      '/publications/journals'
-                    }
-                    variant="ink"
-                    size="md"
-                    external={Boolean(featuredProject.url?.trim())}
-                  >
-                    Read publications
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </Container>
-        </Section>
-      ) : null}
-
-      {libraryFeatured.length ? (
+      {researchFeatured.length ? (
         <Section tone="white" className="border-t border-border">
           <Container>
             <HomeSectionIntro title="Our Research" />
 
-            <FromTheLibrary
-              featured={libraryFeatured}
-              sidebar={librarySidebar}
-              fallbackImages={archiveVisuals}
+            <OurResearch
+              featured={researchFeatured}
+              sidebar={researchSidebar}
             />
           </Container>
         </Section>
@@ -740,7 +687,7 @@ export default async function HomePage() {
                 title: 'Positive Sciences (France)',
                 description:
                   'Cross-border collaboration advancing research for good, documented in the BKSR archive.',
-                imageSrc: prototypeMedia.collabPsychology.url,
+                imageSrc: '/media/partners/positive-sciences.jpeg',
               },
               {
                 id: 'cfep-sri-lanka',
@@ -749,7 +696,7 @@ export default async function HomePage() {
                   'Ceylon Foundation for Economic Policy Analysis (CFEP), Sri Lanka',
                 description:
                   'International partnership supporting evidence-based economic policy analysis with BK School of Research.',
-                imageSrc: prototypeMedia.collabEconomics.url,
+                imageSrc: '/media/partners/cfep.jpeg',
               },
               {
                 id: 'forthcoming-cs',

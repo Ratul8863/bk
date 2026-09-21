@@ -16,7 +16,7 @@ export function Container({
     <Comp
       className={cn(
         'mx-auto w-full min-w-0 px-4 sm:px-6 lg:px-8',
-        narrow ? 'max-w-3xl' : 'max-w-[1320px]',
+        narrow ? 'max-w-3xl' : 'max-w-[1520px]',
         className,
       )}
       {...props}

@@ -1,5 +1,10 @@
 import { v4 as uuidv4 } from 'uuid';
 import { contentRepository } from '@/lib/cms/repository';
+import {
+  asExternalHttpUrl,
+  extractDoiUrlFromText,
+  publicationExternalUrl,
+} from '@/lib/content/research-links';
 import type {
   ContentDatabase,
   Person,
@@ -118,24 +123,22 @@ export function resolveEntityMeta(
   const entity = list.find((item) => item.id === entityId);
   if (!entity) return null;
 
-  let researchUrl = entity.url;
-  if (type === 'research' && !researchUrl?.trim()) {
+  let researchUrl = asExternalHttpUrl(entity.url);
+  if (type === 'research' && !researchUrl) {
     for (const pubId of entity.publicationIds ?? []) {
       const pub = db.publications.find((item) => item.id === pubId);
       if (!pub) continue;
-      if (pub.url?.trim()) {
-        researchUrl = pub.url.trim();
+      const href = publicationExternalUrl(pub);
+      if (href) {
+        researchUrl = href;
         break;
       }
-      if (pub.doi?.trim()) {
-        const doi = pub.doi
-          .trim()
-          .replace(/^https?:\/\/(dx\.)?doi\.org\//i, '');
-        if (doi) {
-          researchUrl = `https://doi.org/${doi}`;
-          break;
-        }
-      }
+    }
+    if (!researchUrl) {
+      researchUrl =
+        extractDoiUrlFromText(
+          (entity as { description?: string }).description,
+        ) ?? extractDoiUrlFromText(entity.summary);
     }
   }
 

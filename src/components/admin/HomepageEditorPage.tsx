@@ -55,9 +55,9 @@ const LIVE_HOMEPAGE_MAP: { title: string; note: string; editable: string }[] = [
     editable: 'Manage under Team directory',
   },
   {
-    title: 'Featured research / library / media / notices',
-    note: 'Pulled from library records you mark as featured here.',
-    editable: 'Featured picks (this page) + library CRUD',
+    title: 'Our Research (homepage)',
+    note: 'Curated research projects — featured rows + “In case you missed it”.',
+    editable: 'Featured research picks (this page) + Research CRUD',
   },
 ];
 
@@ -310,8 +310,8 @@ export function HomepageEditorPage() {
         {tab === 'featured' ? (
           <div className="grid max-w-3xl gap-6">
             <Picker
-              title="Featured research projects"
-              help="Used where the homepage highlights research"
+              title="Featured research"
+              help="Homepage “Our Research” — strongest picks surface as featured rows; the next fill More research. Manage items under Research."
               items={publishedResearch.map((p) => ({
                 id: p.id,
                 label: p.title,
@@ -322,7 +322,7 @@ export function HomepageEditorPage() {
             />
             <Picker
               title="Featured publications"
-              help="Used in From the library / featured rows"
+              help="Optional library picks for other surfaces — not used in the Our Research homepage block."
               items={publishedPublications.map((p) => ({
                 id: p.id,
                 label: `${p.title} (${p.year})`,

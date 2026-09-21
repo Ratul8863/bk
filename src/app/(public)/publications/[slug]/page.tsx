@@ -107,7 +107,9 @@ export default async function PublicationPage({ params }: Props) {
                     <p>
                       {item.type === 'opinion'
                         ? `Opinion / commentary published in ${item.venue ?? 'the press'} (${item.year}).`
-                        : `Scholarly output recorded in the BKSR completed-research archive (${item.year}${item.venue ? ` · ${item.venue}` : ''}).`}
+                        : item.type === 'press-coverage'
+                          ? `Press coverage featuring BK School of Research in ${item.venue ?? 'the media'} (${item.year}).`
+                          : `Scholarly output recorded in the BKSR completed-research archive (${item.year}${item.venue ? ` · ${item.venue}` : ''}).`}
                     </p>
                   )}
                 </div>

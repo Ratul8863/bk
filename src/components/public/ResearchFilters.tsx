@@ -6,7 +6,9 @@ import {
   ResearchProjectAnchor,
   researchProjectHref,
 } from '@/components/editorial/ResearchFeature';
+import { ResearchProjectMedia } from '@/components/editorial/ResearchProjectMedia';
 import { EmptyState } from '@/components/ui/EmptyState';
+import { researchProjectVenueLine } from '@/lib/content/research-links';
 import { RESEARCH_STATUS_LABELS } from '@/lib/public/labels';
 import type {
   ResearchArea,
@@ -361,7 +363,7 @@ export function ResearchFilters({
         data-lenis-prevent
         className="hidden lg:sticky lg:top-28 lg:block lg:max-h-[calc(100dvh-8rem)] lg:self-start lg:overflow-y-auto lg:overscroll-contain lg:pr-1 scrollbar-gutter-stable"
       >
-        <div className="space-y-7 rounded-3xl border border-ink/8 bg-white/70 p-5 xl:p-6">
+        <div className="space-y-7 rounded-3xl border border-ink/8 bg-surface-subtle p-5 xl:p-6">
           <div>
             <p className="font-sans text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-muted">
               Search
@@ -451,7 +453,7 @@ export function ResearchFilters({
           </div>
 
           {refineOpen ? (
-            <div className="rounded-[1.35rem] border border-ink/8 bg-white/70 p-4 sm:p-5">
+            <div className="rounded-[1.35rem] border border-ink/8 bg-surface-subtle p-4 sm:p-5">
               {refineFields}
             </div>
           ) : null}
@@ -494,56 +496,53 @@ export function ResearchFilters({
         </div>
 
         {filtered.length ? (
-          <ul className="divide-y divide-border/80">
+          <ul className="divide-y divide-border">
             {filtered.map((project) => {
               const href = researchProjectHref(project);
-              return (
-              <li key={project.id}>
-                <ResearchProjectAnchor
-                  project={project}
-                  className="group block py-5 sm:py-7"
-                >
-                  <div className="flex flex-wrap items-center gap-x-2 gap-y-1">
-                    <p className="font-sans text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-accent sm:text-[0.6875rem] sm:tracking-[0.16em]">
-                      {RESEARCH_STATUS_LABELS[project.researchStatus]}
-                    </p>
-                    {project.year ? (
-                      <p className="font-sans text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-muted sm:text-[0.6875rem]">
-                        {project.year}
-                      </p>
-                    ) : null}
-                  </div>
+              const venueLine = researchProjectVenueLine(project);
 
-                  <span
+              return (
+                <li key={project.id}>
+                  <ResearchProjectAnchor
+                    project={project}
                     className={cn(
-                      'mt-2 block font-display text-[1.0625rem] leading-[1.35] text-ink sm:mt-2.5 sm:text-xl sm:leading-snug md:text-2xl',
-                      href && 'transition-colors group-hover:text-accent',
+                      'group flex items-start gap-4 py-6 sm:gap-7 sm:py-8',
+                      !href && 'cursor-default',
                     )}
                   >
-                    {project.title}
-                  </span>
-
-                  {project.leadAuthorNames.length ? (
-                    <span className="mt-1.5 block font-instrument text-[0.8125rem] leading-snug text-muted sm:mt-2 sm:text-sm">
-                      {project.leadAuthorNames.join(', ')}
+                    <span className="w-[4.5rem] shrink-0 sm:w-[5.5rem]">
+                      <ResearchProjectMedia project={project} size="list" />
                     </span>
-                  ) : null}
 
-                  {/* Summary is secondary reading — hide on small screens so cards stay scannable */}
-                  {project.summary ? (
-                    <span className="mt-2.5 hidden max-w-3xl text-sm leading-relaxed text-body/70 line-clamp-2 sm:mt-3 sm:block md:line-clamp-3">
-                      {project.summary}
+                    <span className="min-w-0 flex-1">
+                      <span
+                        className={cn(
+                          'block font-display text-lg leading-[1.2] text-ink sm:text-[1.35rem] sm:leading-[1.22] md:text-2xl',
+                          href &&
+                            'transition-colors group-hover:text-accent',
+                        )}
+                      >
+                        {project.title}
+                      </span>
+                      {project.leadAuthorNames.length ? (
+                        <span className="mt-2 block text-sm leading-relaxed text-muted sm:mt-2.5">
+                          {project.leadAuthorNames.join(', ')}
+                        </span>
+                      ) : null}
+                      {venueLine ? (
+                        <span className="mt-1 hidden font-serif text-sm italic leading-snug text-body/80 sm:mt-1.5 sm:block">
+                          {venueLine}
+                        </span>
+                      ) : null}
+                      {href ? (
+                        <span className="mt-3 inline-flex items-center gap-1.5 font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent sm:mt-4 sm:opacity-0 sm:transition-opacity sm:duration-200 sm:group-hover:opacity-100 motion-reduce:opacity-100">
+                          View
+                          <span aria-hidden>→</span>
+                        </span>
+                      ) : null}
                     </span>
-                  ) : null}
-
-                  {href ? (
-                    <span className="mt-3 inline-flex items-center gap-1.5 font-sans text-[0.65rem] font-semibold uppercase tracking-[0.16em] text-accent sm:mt-4 sm:opacity-0 sm:transition-opacity sm:duration-200 sm:group-hover:opacity-100 motion-reduce:opacity-100">
-                      Open publication
-                      <span aria-hidden>→</span>
-                    </span>
-                  ) : null}
-                </ResearchProjectAnchor>
-              </li>
+                  </ResearchProjectAnchor>
+                </li>
               );
             })}
           </ul>

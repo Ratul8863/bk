@@ -26,12 +26,6 @@ export default function ResearchGrantsPage() {
           { label: 'Research', href: '/research' },
           { label: 'Grants' },
         ]}
-        actions={
-          <>
-            <ArrowLink href="/research">All research</ArrowLink>
-            <ArrowLink href="/notices">Notices</ArrowLink>
-          </>
-        }
       />
       <Section tone="white">
         <Container>

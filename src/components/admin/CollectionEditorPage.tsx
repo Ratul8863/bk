@@ -211,6 +211,46 @@ export function CollectionEditorPage({
     if (typeof payload.featuredImageUrl === 'string' && !payload.featuredImageUrl.trim()) {
       payload.featuredImageUrl = null;
     }
+    if (typeof payload.venue === 'string' && !payload.venue.trim()) {
+      payload.venue = null;
+    }
+
+    if (collectionSlug === 'research') {
+      const title =
+        typeof payload.title === 'string' ? payload.title.trim() : '';
+      if (!title) {
+        setSaving(false);
+        setMessage('Add a title before saving.');
+        window.setTimeout(() => setMessage(null), 4000);
+        return;
+      }
+      payload.title = title;
+      if (!payload.researchStatus) {
+        payload.researchStatus = 'ongoing';
+      }
+      if (!Array.isArray(payload.leadAuthorNames)) {
+        payload.leadAuthorNames = [];
+      }
+      if (!Array.isArray(payload.areaIds)) {
+        payload.areaIds = [];
+      }
+      if (!Array.isArray(payload.publicationIds)) {
+        payload.publicationIds = [];
+      }
+      if (
+        (statusOverride === 'published' || payload.status === 'published') &&
+        typeof payload.url === 'string' &&
+        payload.url &&
+        !/^https?:\/\//i.test(payload.url.trim())
+      ) {
+        setSaving(false);
+        setMessage(
+          'External link must start with https:// (or leave it blank).',
+        );
+        window.setTimeout(() => setMessage(null), 4000);
+        return;
+      }
+    }
 
     if (
       collectionSlug === 'people' &&
@@ -325,12 +365,35 @@ export function CollectionEditorPage({
           </p>
         ) : null}
         {collectionSlug === 'research' ? (
-          <p className="mt-3 rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs leading-relaxed text-[#5B6B7C]">
-            <span className="font-semibold text-[#173B6C]">How this appears:</span>{' '}
-            Category (Ongoing / Completed) controls the Research page filters.
-            Focus areas power the area filter. The external link is what visitors
-            open when they click the item — there is no separate detail page.
-          </p>
+          <div className="mt-3 space-y-2">
+            <p className="rounded-xl border border-[#E2E8F0] bg-[#F8FAFC] px-3 py-2 text-xs leading-relaxed text-[#5B6B7C]">
+              <span className="font-semibold text-[#173B6C]">
+                How this appears:
+              </span>{' '}
+              Category (Ongoing / Completed) controls the Research page filters.
+              Venue, authors, year, and summary fill the card. Focus areas power
+              the area filter. The external link is what visitors open on click —
+              there is no separate detail page.
+            </p>
+            {typeof values.url === 'string' && values.url.trim() ? (
+              <p className="rounded-xl border border-[#DCE8F5] bg-[#F3F7FB] px-3 py-2 text-xs text-[#173B6C]">
+                Link attached:{' '}
+                <a
+                  href={values.url.trim()}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="break-all font-medium underline-offset-2 hover:underline"
+                >
+                  {values.url.trim()}
+                </a>
+              </p>
+            ) : (
+              <p className="rounded-xl border border-[#F0E6D8] bg-[#FFFBF5] px-3 py-2 text-xs text-[#8A6B2F]">
+                No external link yet — the card still lists on /research, but
+                clicks will not open a journal page until you attach one.
+              </p>
+            )}
+          </div>
         ) : null}
       </div>
 
@@ -355,7 +418,9 @@ export function CollectionEditorPage({
                   field.name === 'summary' ||
                   field.name === 'excerpt' ||
                   field.name === 'description' ||
-                  field.name === 'url'
+                  field.name === 'venue' ||
+                  field.name === 'url' ||
+                  field.name === 'leadAuthorNames'
                     ? 'sm:col-span-2'
                     : undefined
                 }

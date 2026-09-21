@@ -30,8 +30,71 @@ type BksrInMediaProps = {
 const FOCUS_Y = 0.46;
 const DESKTOP_QUERY = '(min-width: 1024px)';
 
-function channelLabel(_publication: MediaPublication) {
+type MediaChannel = 'Newspaper' | 'Television' | 'YouTube';
+
+/** Distinct channel strips — high contrast, not CTA navy pills. */
+const CHANNEL_STRIP: Record<
+  MediaChannel,
+  { label: string; className: string }
+> = {
+  Newspaper: {
+    label: 'Newspaper',
+    className: 'bg-[#1a4a7a] text-[#f4f7fb]',
+  },
+  Television: {
+    label: 'Television',
+    className: 'bg-[#5a4578] text-[#f6f3fb]',
+  },
+  YouTube: {
+    label: 'YouTube',
+    className: 'bg-[#a33d3d] text-[#fdf6f6]',
+  },
+};
+
+function mediaChannel(publication: MediaPublication): MediaChannel {
+  const url = publication.url?.toLowerCase() ?? '';
+  const venue = publication.venue?.toLowerCase() ?? '';
+  if (url.includes('youtu.be') || url.includes('youtube.com')) {
+    return 'YouTube';
+  }
+  if (
+    url.includes('jamuna.tv') ||
+    venue.includes('maasranga') ||
+    venue.includes('jamuna') ||
+    venue.includes('television')
+  ) {
+    return 'Television';
+  }
   return 'Newspaper';
+}
+
+/** Research-style label strip along the bottom edge of media. */
+function ChannelStrip({
+  channel,
+  compact = false,
+}: {
+  channel: MediaChannel;
+  compact?: boolean;
+}) {
+  const style = CHANNEL_STRIP[channel];
+  return (
+    <span
+      className={cn(
+        'absolute inset-x-0 bottom-0 z-10 flex items-center justify-center text-center shadow-[inset_0_1px_0_rgba(255,255,255,0.12)]',
+        compact ? 'px-1 py-1.5' : 'px-2 py-2.5',
+        style.className,
+      )}
+    >
+      <span
+        className={cn(
+          'font-sans font-semibold uppercase leading-none tracking-[0.14em]',
+          compact ? 'text-[0.5625rem] sm:text-[0.625rem]' : 'text-[0.6875rem]',
+        )}
+      >
+        {style.label}
+      </span>
+    </span>
+  );
 }
 
 function dateLabel(publication: MediaPublication) {
@@ -45,11 +108,11 @@ function outletLine(publication: MediaPublication) {
   return [publication.venue, dateLabel(publication)].filter(Boolean).join(' · ');
 }
 
-function contextLine(publication: MediaPublication) {
-  if (publication.venue) {
-    return `Press column published in ${publication.venue}.`;
-  }
-  return 'Press commentary from the BKSR archive.';
+/** Supporting blurb — never repeats the outlet already shown in outletLine. */
+function summaryLine(publication: MediaPublication) {
+  const text = publication.abstract?.trim();
+  if (!text) return null;
+  return text;
 }
 
 function clippingHref(item: MediaPublication) {
@@ -137,13 +200,15 @@ function MediaMobileDeck({ feed }: { feed: MediaPublication[] }) {
         className="flex snap-x snap-mandatory gap-4 overflow-x-auto overscroll-x-contain pb-2 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         aria-label="Press clippings"
       >
-        {feed.map((item, i) => (
+        {feed.map((item, i) => {
+          const summary = summaryLine(item);
+          return (
           <li
             key={item.id}
             className="w-[min(100%,20.5rem)] shrink-0 snap-start sm:w-[22rem]"
           >
-            <article className="flex h-full flex-col overflow-hidden rounded-[1.5rem] bg-ink p-2">
-              <div className="relative overflow-hidden rounded-[1.15rem] bg-[#0b233f]">
+            <article className="flex h-full flex-col overflow-hidden rounded-[1.5rem] border border-ink/18 bg-[#f4f7fa] p-2">
+              <div className="relative overflow-hidden rounded-[1.15rem] bg-white">
                 <ImageFrame
                   src={getMediaAppearanceVisualUrl(item, i)}
                   alt=""
@@ -152,34 +217,33 @@ function MediaMobileDeck({ feed }: { feed: MediaPublication[] }) {
                   frameClassName="border-0"
                   className="object-cover"
                 />
-                <div className="absolute inset-0 bg-linear-to-t from-ink/80 via-transparent to-transparent" />
-                <span className="absolute left-3 top-3 inline-flex items-center rounded-[1.875rem] bg-paper/95 px-2.5 py-1 font-sans text-[0.6875rem] font-medium text-ink">
-                  {channelLabel(item)}
-                </span>
+                <ChannelStrip channel={mediaChannel(item)} />
               </div>
 
-              <div className="flex flex-1 flex-col gap-3 px-3 pb-3 pt-4 text-paper">
-                <p className="font-sans text-sm text-paper/65">
+              <div className="flex flex-1 flex-col gap-3 px-3 pb-3 pt-4 text-ink">
+                <p className="font-sans text-sm text-ink/55">
                   {outletLine(item)}
                 </p>
-                <h3 className="font-sans text-lg font-semibold leading-snug tracking-tight">
+                <h3 className="font-sans text-lg font-semibold leading-snug tracking-tight text-ink">
                   <ClippingLink
                     item={item}
-                    className="transition-colors hover:text-paper/85"
+                    className="transition-colors hover:text-accent"
                   >
                     {item.title}
                   </ClippingLink>
                 </h3>
-                <p className="line-clamp-2 font-sans text-sm leading-relaxed text-paper/70">
-                  {contextLine(item)}
-                </p>
+                {summary ? (
+                  <p className="line-clamp-2 font-sans text-sm leading-relaxed text-ink/70">
+                    {summary}
+                  </p>
+                ) : null}
                 <div className="mt-auto flex items-center justify-between gap-3 pt-1">
-                  <p className="min-w-0 truncate font-sans text-sm text-paper/60">
+                  <p className="min-w-0 truncate font-sans text-sm text-ink/55">
                     {item.authors[0] ?? ''}
                   </p>
                   <ClippingLink
                     item={item}
-                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-paper px-3.5 py-2 font-sans text-sm font-medium text-ink"
+                    className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-ink px-3.5 py-2 font-sans text-sm font-medium text-paper transition-colors hover:bg-accent"
                   >
                     View
                     <ArrowUpRight className="size-3.5" strokeWidth={1.75} aria-hidden />
@@ -188,7 +252,8 @@ function MediaMobileDeck({ feed }: { feed: MediaPublication[] }) {
               </div>
             </article>
           </li>
-        ))}
+          );
+        })}
       </ul>
 
       <div className="mt-5 flex items-center justify-between gap-4">
@@ -380,10 +445,7 @@ function MediaDesktopBoard({ feed }: { feed: MediaPublication[] }) {
                 className="object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
               />
               <div className="absolute inset-0 bg-linear-to-t from-ink via-ink/55 to-ink/10" />
-              <div className="absolute inset-x-0 bottom-0 space-y-2 p-6">
-                <p className="font-sans text-[0.6875rem] font-semibold tracking-[0.14em] text-paper/80">
-                  {channelLabel(active).toUpperCase()}
-                </p>
+              <div className="absolute inset-x-0 bottom-0 space-y-2 px-6 pb-11 pt-6">
                 <p className="line-clamp-4 font-sans text-xl font-semibold leading-snug text-paper">
                   {active.title}
                 </p>
@@ -391,6 +453,7 @@ function MediaDesktopBoard({ feed }: { feed: MediaPublication[] }) {
                   {outletLine(active)}
                 </p>
               </div>
+              <ChannelStrip channel={mediaChannel(active)} />
             </ClippingLink>
 
             <div className="px-1.5 pb-1.5 pt-0.5">
@@ -437,6 +500,7 @@ function MediaDesktopBoard({ feed }: { feed: MediaPublication[] }) {
           <ul className="flex min-w-0 flex-col gap-5">
             {feed.map((item, index) => {
               const isActive = item.id === active.id;
+              const summary = summaryLine(item);
               return (
                 <li
                   key={item.id}
@@ -455,7 +519,7 @@ function MediaDesktopBoard({ feed }: { feed: MediaPublication[] }) {
                         : 'bg-surface-subtle hover:bg-[#e5ebf3]',
                     )}
                   >
-                    <div className="w-28 shrink-0 overflow-hidden rounded-[1.15rem]">
+                    <div className="relative w-28 shrink-0 overflow-hidden rounded-[1.15rem]">
                       <ImageFrame
                         src={getMediaAppearanceVisualUrl(item, index)}
                         alt=""
@@ -463,6 +527,10 @@ function MediaDesktopBoard({ feed }: { feed: MediaPublication[] }) {
                         sizes="112px"
                         frameClassName="border-0 bg-surface"
                         className="object-cover"
+                      />
+                      <ChannelStrip
+                        channel={mediaChannel(item)}
+                        compact
                       />
                     </div>
 
@@ -476,9 +544,6 @@ function MediaDesktopBoard({ feed }: { feed: MediaPublication[] }) {
                             )}
                           >
                             {String(index + 1).padStart(2, '0')}
-                          </span>
-                          <span className="inline-flex items-center rounded-[1.875rem] bg-ink px-3 py-1 font-sans text-[0.6875rem] font-medium tracking-[0.04em] text-paper">
-                            {channelLabel(item)}
                           </span>
                           <p className="min-w-0 font-sans text-sm text-ink/60">
                             {outletLine(item)}
@@ -494,9 +559,11 @@ function MediaDesktopBoard({ feed }: { feed: MediaPublication[] }) {
                           </ClippingLink>
                         </h3>
 
-                        <p className="mt-2 font-sans text-sm leading-relaxed text-ink/75">
-                          {contextLine(item)}
-                        </p>
+                        {summary ? (
+                          <p className="mt-2 line-clamp-2 font-sans text-sm leading-relaxed text-ink/75">
+                            {summary}
+                          </p>
+                        ) : null}
                       </div>
 
                       <div className="flex min-w-0 items-center justify-between gap-4">
@@ -547,7 +614,7 @@ export function BksrInMedia({ items }: BksrInMediaProps) {
 
       <div className="mt-10 flex justify-center sm:mt-12">
         <Button
-          href="/publications/opinions"
+          href="/media"
           variant="ink"
           size="lg"
           className="w-full max-w-xs sm:w-auto"

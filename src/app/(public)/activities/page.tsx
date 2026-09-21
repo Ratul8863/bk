@@ -9,15 +9,14 @@ import { buildPageMetadata } from '@/lib/seo/metadata';
 
 export const metadata = buildPageMetadata(
   'Activities',
-  'Capacity building, awareness campaigns, research talks, and innovation showcasing at BKSR.',
+  'Building capacity, shaping policy, and creating impact in communities.',
   '/activities',
 );
 
 const ROUTE_ORDER = [
   'capacity-building',
-  'awareness-campaigns',
   'research-talks',
-  'innovation-showcasing',
+  'awareness-campaigns',
 ] as const;
 
 export default async function ActivitiesPage() {
@@ -54,7 +53,7 @@ export default async function ActivitiesPage() {
       <PageHero
         eyebrow="Programmes"
         title="Activities"
-        description="Public programmes that extend BKSR research into training, dialogue, campaigns, and creative practice."
+        description="Building capacity, shaping policy, and creating impact in communities."
         imageSrc={pageHeroMedia.activities}
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Activities' }]}
       />

@@ -13,6 +13,7 @@ import { Eyebrow } from '@/components/ui/Eyebrow';
 import { Section } from '@/components/ui/Section';
 import { pageHeroMedia } from '@/lib/content/page-heroes';
 import { getResearchAreas } from '@/lib/content/queries';
+import { researchProjectVenueLine } from '@/lib/content/research-links';
 import { RESEARCH_STATUS_LABELS } from '@/lib/public/labels';
 import type { ResearchProject } from '@/types/content';
 import { cn } from '@/lib/utils';
@@ -25,8 +26,6 @@ type ResearchStatusListProps = {
   breadcrumbLabel: string;
   emptyTitle: string;
   emptyDescription: string;
-  peerHref: string;
-  peerLabel: string;
 };
 
 function displayTitle(title: string) {
@@ -43,8 +42,6 @@ export async function ResearchStatusList({
   breadcrumbLabel,
   emptyTitle,
   emptyDescription,
-  peerHref,
-  peerLabel,
 }: ResearchStatusListProps) {
   const areas = await getResearchAreas();
   const areaTitleById = new Map(areas.map((area) => [area.id, area.title]));
@@ -54,6 +51,9 @@ export async function ResearchStatusList({
       .filter((label): label is string => Boolean(label));
 
   const [featured, ...rest] = projects;
+  const featuredVenue = featured
+    ? researchProjectVenueLine(featured)
+    : null;
 
   return (
     <>
@@ -67,13 +67,6 @@ export async function ResearchStatusList({
           { label: 'Research', href: '/research' },
           { label: breadcrumbLabel },
         ]}
-        actions={
-          <>
-            <ArrowLink href={peerHref}>{peerLabel}</ArrowLink>
-            <ArrowLink href="/research/areas">Research areas</ArrowLink>
-            <ArrowLink href="/research">All research</ArrowLink>
-          </>
-        }
       />
 
       <Section className="py-14 md:py-20">
@@ -147,9 +140,11 @@ export async function ResearchStatusList({
                         >
                           {displayTitle(featured.title)}
                         </h3>
-                        <p className="mt-4 max-w-2xl text-[0.975rem] leading-[1.75] text-muted">
-                          {featured.summary}
-                        </p>
+                        {featuredVenue ? (
+                          <p className="mt-4 max-w-2xl text-[0.975rem] leading-[1.75] text-muted">
+                            {featuredVenue}
+                          </p>
+                        ) : null}
                         {featured.leadAuthorNames.length ? (
                           <p className="mt-4 font-instrument text-sm text-body">
                             {featured.leadAuthorNames.join(', ')}
@@ -177,6 +172,7 @@ export async function ResearchStatusList({
                   {rest.map((project, i) => {
                     const areaLabels = labelsFor(project);
                     const href = researchProjectHref(project);
+                    const venue = researchProjectVenueLine(project);
                     return (
                       <li key={project.id}>
                         <Reveal
@@ -225,9 +221,13 @@ export async function ResearchStatusList({
                             >
                               {displayTitle(project.title)}
                             </h3>
-                            <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">
-                              {project.summary}
-                            </p>
+                            {venue ? (
+                              <p className="mt-3 flex-1 text-sm leading-relaxed text-muted">
+                                {venue}
+                              </p>
+                            ) : (
+                              <span className="mt-3 flex-1" aria-hidden />
+                            )}
                             {areaLabels.length ? (
                               <p className="mt-4 font-instrument text-xs text-body">
                                 {areaLabels.slice(0, 2).join(' · ')}

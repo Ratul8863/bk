@@ -7,6 +7,7 @@ export type PublicationType =
   | 'book-chapter'
   | 'conference'
   | 'opinion'
+  | 'press-coverage'
   | 'report'
   | 'newsletter'
   | 'annual-report'
@@ -268,6 +269,8 @@ export interface ResearchProject extends ContentBase {
   title: string;
   summary: string;
   description?: string;
+  /** Journal, book, conference, or source line under the title on /research */
+  venue?: string | null;
   researchStatus: ResearchStatus;
   areaIds: string[];
   leadAuthorNames: string[];

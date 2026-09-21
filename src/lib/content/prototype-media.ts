@@ -98,14 +98,14 @@ export const prototypeMedia = {
     alt: 'Prototype portrait for researcher statement slot',
   },
   collabPsychology: {
-    id: 'media-proto-collab-psychology',
-    url: '/media/prototype/collab-logo-psychology.png',
-    alt: 'Prototype institution mark for a psychology collaboration slot',
+    id: 'media-partner-positive-sciences',
+    url: '/media/partners/positive-sciences.jpeg',
+    alt: 'Positive Sciences logo',
   },
   collabEconomics: {
-    id: 'media-proto-collab-economics',
-    url: '/media/prototype/collab-logo-economics.png',
-    alt: 'Prototype institution mark for an economics collaboration slot',
+    id: 'media-partner-cfep',
+    url: '/media/partners/cfep.jpeg',
+    alt: 'Ceylon Foundation for Economic Policy Analysis (CFEP) logo',
   },
   collabComputerScience: {
     id: 'media-proto-collab-computer-science',
@@ -183,6 +183,24 @@ export const publicationCoverById: Record<string, string> = {
 
 /** Atmosphere visuals for newspaper / media appearances (prototype only). */
 export const mediaAppearanceVisualById: Record<string, string> = {
+  'press-tbs-bk-school-curiosity-2023': prototypeMedia.mediaSpotlight.url,
+  'press-deshrupantor-beautiful-future-research-2023':
+    prototypeMedia.mediaBroadsheet.url,
+  'press-jamuna-cfep-mou-2025': prototypeMedia.mediaBroadcast.url,
+  'press-deshrupantor-research-as-career-2026':
+    prototypeMedia.mediaDigitalNews.url,
+  'press-ajker-patrika-research-for-students-2023':
+    prototypeMedia.mediaNewspaperDesk.url,
+  'press-protidiner-bksr-cfep-2025': prototypeMedia.mediaClippings.url,
+  'press-dhaka-tribune-joy-bangla-2022': prototypeMedia.mediaSpotlight.url,
+  'press-tbs-joy-bangla-inspirational-2022':
+    prototypeMedia.mediaDigitalNews.url,
+  'press-risingbd-youth-award-2023': prototypeMedia.mediaBroadsheet.url,
+  'press-youtube-maasranga-bezon-2023': prototypeMedia.mediaBroadcast.url,
+  'press-dbangla71-clipping-2022': prototypeMedia.mediaClippings.url,
+  'press-bdnews24-rohingya-covid-2022': prototypeMedia.mediaNewspaperDesk.url,
+  'press-amadershomoy-unicef-feature-2022':
+    prototypeMedia.mediaDigitalNews.url,
   'pub-kumar-varendra-university-asian-age-2019':
     prototypeMedia.mediaNewspaperDesk.url,
   'pub-kumar-probashi-aay-alokito-vor-2018':
@@ -254,4 +272,12 @@ export function getResearchProjectVisualUrl(
     ] ??
     prototypeMedia.researchField.url
   );
+}
+
+/** Real cover only — null when none is set (use typographic placeholder in UI). */
+export function getResearchProjectCoverUrl(project: {
+  featuredImageUrl?: string | null;
+}): string | null {
+  const url = project.featuredImageUrl?.trim();
+  return url || null;
 }

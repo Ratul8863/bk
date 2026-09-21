@@ -2,9 +2,8 @@ import { ResearchFeature } from '@/components/editorial/ResearchFeature';
 import { PageHero } from '@/components/layout/PageHero';
 import { Container } from '@/components/ui/Container';
 import { Section } from '@/components/ui/Section';
-import { ArrowLink } from '@/components/ui/ArrowLink';
-import { Eyebrow } from '@/components/ui/Eyebrow';
 import { ResearchFilters } from '@/components/public/ResearchFilters';
+import { ResearchIntro } from '@/components/public/ResearchIntro';
 import { pageHeroMedia } from '@/lib/content/page-heroes';
 import { withResearchExternalUrls } from '@/lib/content/research-links';
 import {
@@ -39,28 +38,19 @@ export default async function ResearchPage() {
         description="Evidence-based research across disciplines, shaping policy and building resilient societies."
         imageSrc={pageHeroMedia.research}
         breadcrumbs={[{ label: 'Home', href: '/' }, { label: 'Research' }]}
-        actions={
-          <>
-            <ArrowLink href="/research/ongoing">Ongoing</ArrowLink>
-            <ArrowLink href="/research/previous">Completed</ArrowLink>
-            <ArrowLink href="/research/areas">Research areas</ArrowLink>
-            <ArrowLink href="/research/grants">Grants</ArrowLink>
-          </>
-        }
       />
+
+      <ResearchIntro />
 
       {featured ? (
         <Section tone="white" className="border-b border-border">
           <Container>
-            <Eyebrow>Featured project</Eyebrow>
-            <div className="mt-8">
-              <ResearchFeature project={featured} />
-            </div>
+            <ResearchFeature project={featured} />
           </Container>
         </Section>
       ) : null}
 
-      <Section tone="sage">
+      <Section className="bg-[#F7F1E6]">
         <Container>
           <ResearchFilters projects={projects} areas={areas} />
         </Container>

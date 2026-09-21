@@ -21,13 +21,11 @@ export default async function Page() {
   return (
     <ResearchStatusList
       title="Completed"
-      description="Completed research mapped from peer-reviewed journal articles across health, remittances, climate, education, and related fields."
+      description="Completed research from the BKSR archive — journal articles, book chapters, and conference papers."
       breadcrumbLabel="Completed"
       projects={projects}
       emptyTitle="No projects in this list"
       emptyDescription="No completed projects are present in the current portfolio."
-      peerHref="/research/ongoing"
-      peerLabel="Ongoing"
     />
   );
 }

@@ -188,7 +188,7 @@ export function SiteHeader({
   return (
     <>
       <header className="pointer-events-none fixed inset-x-0 top-0 z-50">
-        <Container className="pointer-events-auto max-w-[1520px] pt-3 sm:pt-4">
+        <Container className="pointer-events-auto pt-3 sm:pt-4">
           <div
             className={cn(
               'grid grid-cols-[auto_1fr_auto] items-center gap-2 rounded-[1.25rem] border px-2.5 py-2 sm:gap-3 sm:px-3 sm:py-2.5',

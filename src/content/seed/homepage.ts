@@ -19,8 +19,11 @@ None of this would be possible without the trust of our partners, donors, and co
 
 As we look ahead, our focus stays the same nurturing young researchers, asking the questions that matter, and bridging the gap between evidence and impact. I invite you to explore our work and join us on this journey.`,
   featuredResearchProjectIds: [
-    'project-char-land-climate-displacement',
     'project-remittances-rural-development-2026',
+    'project-climate-women-pwd-2026',
+    'project-social-network-loneliness-academic-performance',
+    'project-information-literacy-undergraduates-2026',
+    'project-climate-perception-university-students',
   ],
   featuredPublicationIds: [
     'pub-kumar-remittances-rural-development-2026',
@@ -49,8 +52,8 @@ As we look ahead, our focus stays the same nurturing young researchers, asking t
     {
       id: 'home-featured-publications',
       type: 'featured-publications',
-      title: 'Our Research',
-      enabled: true,
+      title: 'Featured publications',
+      enabled: false,
       order: 4,
     },
     {

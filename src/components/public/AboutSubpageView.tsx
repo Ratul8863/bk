@@ -32,7 +32,6 @@ export function AboutSubpageView({ page, slug }: AboutSubpageViewProps) {
           { label: 'About', href: '/about' },
           { label: page.title },
         ]}
-        actions={<ArrowLink href="/about">About overview</ArrowLink>}
       />
       <ArticleReading
         body={page.body}

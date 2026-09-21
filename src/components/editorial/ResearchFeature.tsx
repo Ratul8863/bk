@@ -1,13 +1,15 @@
-import Link from 'next/link';
 import { ArrowLink } from '@/components/ui/ArrowLink';
-import { Tag } from '@/components/ui/Tag';
+import { Eyebrow } from '@/components/ui/Eyebrow';
+import { ImageFrame } from '@/components/ui/ImageFrame';
+import { asExternalHttpUrl } from '@/lib/content/research-links';
+import { getResearchProjectCoverUrl } from '@/lib/content/prototype-media';
+import { RESEARCH_STATUS_LABELS } from '@/lib/public/labels';
 import type { ResearchProject } from '@/types/content';
 import { cn } from '@/lib/utils';
 
-/** External journal/DOI/source only — no internal detail route. */
+/** External journal/DOI/source only — never an internal detail route. */
 export function researchProjectHref(project: ResearchProject): string | null {
-  const href = project.url?.trim();
-  return href || null;
+  return asExternalHttpUrl(project.url);
 }
 
 export function researchProjectIsExternal(href: string): boolean {
@@ -20,7 +22,7 @@ type ResearchProjectAnchorProps = {
   children: React.ReactNode;
 };
 
-/** Opens attached external link; renders a non-link wrapper when none is set. */
+/** Opens attached external journal/source; non-link when none is set. */
 export function ResearchProjectAnchor({
   project,
   className,
@@ -30,71 +32,98 @@ export function ResearchProjectAnchor({
   if (!href) {
     return <div className={className}>{children}</div>;
   }
-  if (researchProjectIsExternal(href)) {
-    return (
-      <a
-        href={href}
-        className={className}
-        target="_blank"
-        rel="noopener noreferrer"
-      >
-        {children}
-      </a>
-    );
-  }
   return (
-    <Link href={href} className={className}>
+    <a
+      href={href}
+      className={className}
+      target="_blank"
+      rel="noopener noreferrer"
+    >
       {children}
-    </Link>
+    </a>
   );
 }
 
 type ResearchFeatureProps = {
   project: ResearchProject;
+  imageIndex?: number;
   className?: string;
 };
 
-export function ResearchFeature({ project, className }: ResearchFeatureProps) {
+/**
+ * Featured strip — same composition as `/publications` featured:
+ * portrait (or year plate) left; Featured + meta + title + CTA right.
+ */
+export function ResearchFeature({
+  project,
+  className,
+}: ResearchFeatureProps) {
   const href = researchProjectHref(project);
+  const cover = getResearchProjectCoverUrl(project);
+  const statusLabel = RESEARCH_STATUS_LABELS[project.researchStatus];
+  const yearLabel = project.year ? String(project.year) : null;
+  const meta = [statusLabel, yearLabel].filter(Boolean).join(' · ');
 
   return (
-    <article className={cn('grid gap-6 lg:grid-cols-12 lg:gap-10', className)}>
-      <div className="lg:col-span-4">
-        <Tag tone="sage">{project.researchStatus}</Tag>
-        {project.year ? (
-          <p className="mt-4 font-display text-5xl text-ink/15">{project.year}</p>
-        ) : null}
+    <article
+      className={cn(
+        'grid items-start gap-8 lg:grid-cols-12 lg:gap-x-12 xl:gap-x-14',
+        className,
+      )}
+    >
+      <div className="lg:col-span-3">
+        {cover ? (
+          <ImageFrame
+            src={cover}
+            alt=""
+            aspect="portrait"
+            sizes="(max-width: 1024px) 40vw, 18vw"
+            framed
+            frameClassName="mx-auto max-w-[11rem] lg:mx-0 lg:max-w-none"
+          />
+        ) : (
+          <div
+            className="mx-auto flex aspect-3/4 w-full max-w-[11rem] flex-col justify-between rounded-[0.65rem] border border-ink/8 bg-surface-subtle p-4 lg:mx-0 lg:max-w-none"
+            aria-hidden
+          >
+            <span className="font-sans text-[0.625rem] font-semibold uppercase tracking-[0.14em] text-muted">
+              {statusLabel}
+            </span>
+            <span className="font-display text-3xl leading-none tabular-nums text-ink/25 sm:text-4xl">
+              {yearLabel ?? statusLabel.slice(0, 2)}
+            </span>
+          </div>
+        )}
       </div>
-      <div className="lg:col-span-8">
-        <h3 className="font-display text-3xl leading-tight text-ink md:text-4xl">
+
+      <div className="min-w-0 self-center lg:col-span-9">
+        <Eyebrow>Featured</Eyebrow>
+        {meta ? (
+          <p className="mt-4 font-sans text-[0.6875rem] font-semibold uppercase tracking-[0.16em] text-muted">
+            {meta}
+          </p>
+        ) : null}
+        <h2 className="mt-3 max-w-3xl font-display text-2xl leading-snug text-ink sm:text-3xl">
           {href ? (
             <a
               href={href}
               className="transition-colors hover:text-accent"
-              {...(researchProjectIsExternal(href)
-                ? { target: '_blank', rel: 'noopener noreferrer' }
-                : {})}
+              target="_blank"
+              rel="noopener noreferrer"
             >
               {project.title}
             </a>
           ) : (
             project.title
           )}
-        </h3>
-        <p className="mt-4 max-w-2xl text-base leading-relaxed text-muted md:text-lg">
-          {project.summary}
-        </p>
+        </h2>
         {project.leadAuthorNames.length ? (
-          <p className="mt-4 font-sans text-sm text-body">
+          <p className="mt-3 text-sm text-muted">
             {project.leadAuthorNames.join(', ')}
           </p>
         ) : null}
         {href ? (
-          <ArrowLink
-            href={href}
-            className="mt-6"
-            external={researchProjectIsExternal(href)}
-          >
+          <ArrowLink href={href} className="mt-6" external>
             Open publication
           </ArrowLink>
         ) : null}

@@ -104,7 +104,7 @@ export function PublicationFilters({
     () =>
       lockType && initialType !== 'all'
         ? publications.filter((item) => item.type === initialType)
-        : publications,
+        : publications.filter((item) => item.type !== 'press-coverage'),
     [publications, lockType, initialType],
   );
 
@@ -482,10 +482,19 @@ export function PublicationFilters({
           <ul className="divide-y divide-border">
             {filtered.map((item) => {
               const cover = getPublicationCoverUrl(item);
+              const href =
+                item.type === 'press-coverage' && item.url?.trim()
+                  ? item.url.trim()
+                  : `/publications/${item.slug}`;
+              const external =
+                item.type === 'press-coverage' && Boolean(item.url?.trim());
               return (
                 <li key={item.id}>
                   <Link
-                    href={`/publications/${item.slug}`}
+                    href={href}
+                    {...(external
+                      ? { target: '_blank', rel: 'noopener noreferrer' }
+                      : {})}
                     className="group grid grid-cols-[4.25rem_minmax(0,1fr)] gap-4 py-6 sm:grid-cols-[5.5rem_minmax(0,1fr)] sm:gap-7 sm:py-8"
                   >
                     <span

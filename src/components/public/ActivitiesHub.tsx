@@ -41,10 +41,10 @@ function MetaChip({
 
 /** Short focus line so each stream reads clearly at a glance. */
 const STREAM_FOCUS: Record<string, string> = {
-  'capacity-building': 'Methods, seminars, and skills training',
-  'awareness-campaign': 'Public dialogue on social themes',
-  'research-talk': 'Ideas and scholarly exchange',
-  'innovation-showcasing': 'Youth writing and creative work',
+  'capacity-building': 'Training, funding, and mentorship',
+  'research-talk': 'Dialogue, briefings, and partnerships',
+  'awareness-campaign': 'Fieldwork, outreach, and community impact',
+  'innovation-showcasing': 'Creative and literary initiatives',
 };
 
 function ProgrammeCard({
@@ -106,7 +106,7 @@ function ProgrammeCard({
                 {eventCount === 1 ? 'gathering' : 'gatherings'}
               </MetaChip>
             ) : (
-              <MetaChip onInk>Creative stream</MetaChip>
+              <MetaChip onInk>Programme stream</MetaChip>
             )}
           </div>
 
@@ -194,7 +194,7 @@ export function ActivitiesHub({
           {programmes.length}{' '}
           {programmes.length === 1 ? 'stream' : 'streams'}
           {relatedEvents.length
-            ? ` Â· ${relatedEvents.length} linked ${
+            ? ` · ${relatedEvents.length} linked ${
                 relatedEvents.length === 1 ? 'gathering' : 'gatherings'
               }`
             : null}

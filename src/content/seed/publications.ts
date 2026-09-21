@@ -1,4 +1,5 @@
 import type { Publication } from '@/types/content';
+import { pressCoveragePublications } from './press-coverage';
 
 const base = {
   status: 'published' as const,
@@ -8,7 +9,7 @@ const base = {
 };
 
 /** Portfolio publications aligned to docs/New folder/Research.docx */
-export const publications: Publication[] = [
+const scholarlyPublications: Publication[] = [
   // —— Journal articles ——
   {
     ...base,
@@ -543,6 +544,7 @@ export const publications: Publication[] = [
     citation:
       'Jahan, M. E., Saker, M. S. and Kumar, B. (2025). Organizational Challenges and talent Mobility in Bangladesh: A Comparative Analysis between Pre and Post-COVID-19 Era. Handbook of Talent Management and Learning Organizations. Taylor and Francis.',
     areaIds: ['area-business-technology'],
+    projectId: 'project-talent-mobility-bangladesh-2025',
   },
   {
     ...base,
@@ -564,6 +566,7 @@ export const publications: Publication[] = [
     citation:
       'Kumar, B., Tiasha, A. M., Shah, A. and Urbee, A. U. (2024). Green Bonds in Modern Portfolios: Risk‑Return Dynamics. Green Bonds and Sustainable Finance: The Evolution of Portfolio Management in Conventional Markets. Taylor and Francis.',
     areaIds: ['area-economics-sustainability', 'area-business-technology'],
+    projectId: 'project-green-bonds-portfolios-2024',
   },
   {
     ...base,
@@ -584,6 +587,7 @@ export const publications: Publication[] = [
     citation:
       'Kumar, B., Ali, S. R. and Kibria, G. (2020). International Remittances and Household Welfare: Evidence from Naogaon, Bangladesh. Women Empowerment and Well-being for Inclusive Economic Growth. IGI Global: USA.',
     areaIds: ['area-migration-diaspora', 'area-gender-development'],
+    projectId: 'project-remittances-naogaon-igi-2020',
   },
   {
     ...base,
@@ -604,6 +608,7 @@ export const publications: Publication[] = [
     citation:
       'Maqsood, Z., Sardar, I. and Kumar, B. (2020). Factors Affecting the Motivation and Productivity in the Workplace: a Case of Female University Teachers. Women Empowerment and Well-being for Inclusive Economic Growth. IGI Global: USA.',
     areaIds: ['area-gender-development', 'area-education-culture'],
+    projectId: 'project-female-teachers-motivation-2020',
   },
   {
     ...base,
@@ -622,7 +627,7 @@ export const publications: Publication[] = [
     abstract:
       'Examined relationships among social networks, social media use, loneliness, and academic performance for Bangladeshi university students.',
     areaIds: ['area-media-communication', 'area-education-culture'],
-    projectId: 'project-social-network-loneliness-academic-performance',
+    projectId: 'project-nexus-social-network-igi-2019',
   },
 
   // —— Conference papers ——
@@ -641,6 +646,7 @@ export const publications: Publication[] = [
     citation:
       'Bezon Kumar (01 to 02 May 2026). From Disruption to Digital Transformation: Evidence on Youth Entrepreneurial Resilience and Business Adaptation in Bangladesh during COVID-19. The Quest International Conference on Business, Technology, and Hospitality for Sustainable Future (QICBTH-SF 2026), Quest International College, Kathmandu, Nepal.',
     areaIds: ['area-business-technology', 'area-economics-sustainability'],
+    projectId: 'project-youth-entrepreneurial-resilience-2026',
   },
   {
     ...base,
@@ -657,7 +663,7 @@ export const publications: Publication[] = [
     citation:
       'Bezon Kumar (01 to 03 September 2025). The Livelihood Impacts of Climate Change and Coping Mechanisms of Forced Displaced Char Land Dwellers in Bangladesh. The International Conference on Behavioural Economics (ICBE 2025), Department of Economics, CHRIST (Deemed to be University), Bangalore, India.',
     areaIds: ['area-environment-climate', 'area-migration-diaspora'],
-    projectId: 'project-char-land-climate-displacement',
+    projectId: 'project-char-land-livelihood-icbe-2025',
   },
   {
     ...base,
@@ -674,6 +680,7 @@ export const publications: Publication[] = [
     citation:
       'Kumar, B. (06-08 June 2024). What Triggers Information Literacy Skill? Insights from University Students in Bangladesh. 2nd International Conference on the Art of Social Changes, Rabindra University, Bangladesh.',
     areaIds: ['area-education-culture'],
+    projectId: 'project-information-literacy-triggers-2024',
   },
   {
     ...base,
@@ -690,6 +697,7 @@ export const publications: Publication[] = [
     citation:
       'Kumar, B. (27 January 2024). International Remittances and Household Wellbeing: Evidence from Rural Bangladesh. 8th Annual Conference on Social Science Research in Bangladesh, BISR, Dhaka, Bangladesh.',
     areaIds: ['area-migration-diaspora', 'area-economics-sustainability'],
+    projectId: 'project-remittances-wellbeing-bisr-2024',
   },
   {
     ...base,
@@ -706,6 +714,7 @@ export const publications: Publication[] = [
     citation:
       'Kumar, B. (21-23 September 2023). Nexus between Child Marriage and Domestic Violence: Evidence from Sirajganj, Bangladesh. CEDCON’s Annual International Conference in Economics, Tribhuvan University, Nepal.',
     areaIds: ['area-gender-development', 'area-society-politics'],
+    projectId: 'project-child-marriage-cedcon-2023',
   },
   {
     ...base,
@@ -722,6 +731,7 @@ export const publications: Publication[] = [
     citation:
       'Kumar, B. (15-17 June 2023). Assessing the Impact of COVID-19 Pandemic on Vulnerable Populations in Bangladesh. 1st International Conference on the Art of Social Changes, Rabindra University, Bangladesh.',
     areaIds: ['area-health-wellbeing'],
+    projectId: 'project-covid-vulnerable-rabindra-2023',
   },
   {
     ...base,
@@ -737,6 +747,7 @@ export const publications: Publication[] = [
     citation:
       'Kumar, B. (02-04 June 2023). Nexus between Child Marriage and Domestic Violence: Evidence from Sirajganj, Bangladesh. Organized by GCCY, Cambridge, UK.',
     areaIds: ['area-gender-development', 'area-society-politics'],
+    projectId: 'project-child-marriage-gccy-2023',
   },
   {
     ...base,
@@ -753,6 +764,7 @@ export const publications: Publication[] = [
     citation:
       "Kumar, B., Pinky, S. D. (2020). Factors affecting people’s knowledge about sexually transmitted infections: evidence from the developing countries. Bangladesh International Medical Students' Scientific Congress BIMSSCON, Dhaka, Bangladesh.",
     areaIds: ['area-health-wellbeing'],
+    projectId: 'project-sti-knowledge-bimsscon-2020',
   },
   {
     ...base,
@@ -769,6 +781,7 @@ export const publications: Publication[] = [
     citation:
       'Kumar, B. (20-21 November, 2021). Impact of Social Media Addiction on Mental Health and Academic Performance of University Students in Bangladesh. 4th Asian Conference on Science, Technology, and Medicine (ACSTM) organized by ACSE, Dubai, UAE.',
     areaIds: ['area-media-communication', 'area-health-wellbeing'],
+    projectId: 'project-social-media-addiction-acstm-2021',
   },
   {
     ...base,
@@ -785,6 +798,7 @@ export const publications: Publication[] = [
     citation:
       "Kumar, B. and Chandraaroy, B. (05-08 February, 2020). Impact of Seminar on Students’ Perception about Climate Change: A Case Study of Rabindra University, Bangladesh. 7th International Conference on Public Administration and Development (ICPAD) Social Science Research in Bangladesh, BPATC, Dhaka, Bangladesh.",
     areaIds: ['area-environment-climate', 'area-education-culture'],
+    projectId: 'project-seminar-climate-icpad-2020',
   },
   {
     ...base,
@@ -808,7 +822,7 @@ export const publications: Publication[] = [
     abstract:
       'Case study of climate change perception and knowledge among university students in Bangladesh.',
     areaIds: ['area-environment-climate'],
-    projectId: 'project-climate-perception-university-students',
+    projectId: 'project-climate-perception-conference-2019',
   },
 
   // —— Newspaper / opinion ——
@@ -967,4 +981,9 @@ export const publications: Publication[] = [
       'Kumar, B. (23 August, 2017). “Remittance: an effective mechanism for development.” The Daily Asian Age, 4(69): 20.',
     areaIds: ['area-economics-sustainability', 'area-migration-diaspora'],
   },
+];
+
+export const publications: Publication[] = [
+  ...scholarlyPublications,
+  ...pressCoveragePublications,
 ];

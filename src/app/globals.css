@@ -23,7 +23,7 @@
   --border-soft: #d9dee5;
 
   /* Semantic aliases used across the app */
-  --color-paper: var(--warm-white);
+  --color-paper: var(--white);
   --color-ink: var(--bksr-deep-navy);
   --color-accent: var(--bksr-navy);
   --color-sage: var(--surface-blue);
@@ -39,7 +39,7 @@
 }
 
 @theme inline {
-  --color-paper: #f8f7f3;
+  --color-paper: #ffffff;
   --color-ink: #0d2745;
   --color-accent: #173b6c;
   --color-sage: #eaf0f6;
@@ -140,5 +140,104 @@ summary:focus-visible,
   }
   to {
     transform: translateX(-50%);
+  }
+}
+
+/* BKSR line-draw loader — stroke-dash technique (golf-bag GIF style) */
+.bksr-loader-svg {
+  display: block;
+}
+
+.bksr-loader-stroke {
+  fill: none;
+  stroke-dasharray: var(--bksr-dash);
+  stroke-dashoffset: var(--bksr-dash);
+  animation: bksr-loader-draw 2.4s ease-in-out infinite;
+}
+
+.bksr-loader-outer {
+  --bksr-dash: 240;
+  animation-delay: 0s;
+}
+
+.bksr-loader-cross {
+  --bksr-dash: 168;
+  animation-delay: 0.18s;
+}
+
+.bksr-loader-ring {
+  --bksr-dash: 60;
+  animation-delay: 0.36s;
+}
+
+.bksr-loader-letter {
+  opacity: 0;
+  animation: bksr-loader-letter 2.4s ease-in-out infinite;
+}
+
+.bksr-loader-letter-k {
+  animation-delay: 0.45s;
+}
+
+.bksr-loader-letter-b {
+  animation-delay: 0.55s;
+}
+
+.bksr-loader-letter-s {
+  animation-delay: 0.65s;
+}
+
+.bksr-loader-letter-r {
+  animation-delay: 0.75s;
+}
+
+@keyframes bksr-loader-draw {
+  0% {
+    stroke-dashoffset: var(--bksr-dash);
+    opacity: 1;
+  }
+  35% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  70% {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+  85%,
+  100% {
+    stroke-dashoffset: var(--bksr-dash);
+    opacity: 0.35;
+  }
+}
+
+@keyframes bksr-loader-letter {
+  0%,
+  18% {
+    opacity: 0;
+  }
+  32%,
+  70% {
+    opacity: 1;
+  }
+  85%,
+  100% {
+    opacity: 0;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .bksr-loader-stroke,
+  .bksr-loader-letter {
+    animation: none !important;
+  }
+
+  .bksr-loader-stroke {
+    stroke-dashoffset: 0;
+    opacity: 1;
+  }
+
+  .bksr-loader-letter {
+    opacity: 1;
   }
 }

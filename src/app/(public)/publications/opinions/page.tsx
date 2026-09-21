@@ -1,38 +1,23 @@
-import { PageHero } from '@/components/layout/PageHero';
-import { Container } from '@/components/ui/Container';
-import { Section } from '@/components/ui/Section';
-import { PublicationFilters } from '@/components/public/PublicationFilters';
-import { getPublications, getResearchAreas } from '@/lib/content/queries';
-import { buildPageMetadata } from '@/lib/seo/metadata';
+import {
+  PublicationTypePage,
+  publicationTypeMetadata,
+} from '@/components/public/PublicationTypePage';
 
-export const metadata = buildPageMetadata(
+export const metadata = publicationTypeMetadata(
   'Opinions',
-  'Opinions from BK School of Research.',
+  "Thought-provoking commentary from our researchers on today's most pressing questions.",
   '/publications/opinions',
 );
 
-export default async function Page() {
+export default function Page() {
   return (
-    <>
-      <PageHero
-        title="Opinions"
-        description="Filtered view of the publication library."
-        breadcrumbs={[
-          { label: 'Home', href: '/' },
-          { label: 'Publications', href: '/publications' },
-          { label: 'Opinions' },
-        ]}
-      />
-      <Section>
-        <Container>
-          <PublicationFilters
-            publications={await getPublications()}
-            areas={await getResearchAreas()}
-            initialType="opinion"
-          />
-        </Container>
-      </Section>
-    </>
+    <PublicationTypePage
+      type="opinion"
+      title="Opinions"
+      description="Thought-provoking commentary from our researchers on today's most pressing questions."
+      emptyTitle="No opinions published yet"
+      emptyDescription="Opinion pieces will appear here when published."
+      path="/publications/opinions"
+    />
   );
 }
-

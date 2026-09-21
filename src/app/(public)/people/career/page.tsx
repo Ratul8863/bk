@@ -36,12 +36,6 @@ export default async function CareerPage() {
           { label: 'People', href: '/people' },
           { label: 'Career at BKSR' },
         ]}
-        actions={
-          <>
-            <ArrowLink href="/notices">All notices</ArrowLink>
-            <ArrowLink href="/join">Apply to join</ArrowLink>
-          </>
-        }
       />
       <Section tone="white">
         <Container>

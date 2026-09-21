@@ -69,16 +69,16 @@ export const adminNavGroups: AdminNavGroup[] = [
     label: 'Content library',
     items: [
       {
-        label: 'Research projects',
+        label: 'Research',
         href: '/admin/research',
         icon: FlaskConical,
-        description: 'Ongoing & completed · links · focus areas',
+        description: 'Ongoing & completed · add by category · attach links',
       },
       {
         label: 'Focus areas',
         href: '/admin/research-areas',
         icon: Compass,
-        description: 'Categories for research filters',
+        description: 'Filter categories for Research',
       },
       {
         label: 'Publications',

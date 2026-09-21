@@ -53,17 +53,17 @@ export const ACTIVITY_ROUTE_META: {
   {
     routeSlug: 'capacity-building',
     type: 'capacity-building',
-    label: 'Seminar & Training',
-  },
-  {
-    routeSlug: 'awareness-campaigns',
-    type: 'awareness-campaign',
-    label: 'Campaigns',
+    label: 'Capacity Building',
   },
   {
     routeSlug: 'research-talks',
     type: 'research-talk',
-    label: 'Research Talk',
+    label: 'Policy & Academic Engagement',
+  },
+  {
+    routeSlug: 'awareness-campaigns',
+    type: 'awareness-campaign',
+    label: 'Community & Social Impact',
   },
   {
     routeSlug: 'innovation-showcasing',
@@ -77,6 +77,7 @@ export const PUBLICATION_TYPE_LABELS: Record<PublicationType, string> = {
   'book-chapter': 'Book chapter',
   conference: 'Conference',
   opinion: 'Opinion',
+  'press-coverage': 'Press coverage',
   report: 'Report',
   newsletter: 'Newsletter',
   'annual-report': 'Annual report',

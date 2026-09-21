@@ -39,8 +39,8 @@ function InstitutionLogo({
       className={cn(
         'relative shrink-0 overflow-hidden rounded-[1.25rem] bg-white shadow-[0_1px_0_rgba(255,255,255,0.12)]',
         size === 'desktop'
-          ? 'size-[7.5rem] p-3.5 lg:size-[8.75rem] lg:rounded-[1.5rem] lg:p-4'
-          : 'size-[5.5rem] rounded-[1.1rem] p-2.5',
+          ? 'size-[7.5rem] p-2.5 lg:size-[8.75rem] lg:rounded-[1.5rem] lg:p-3'
+          : 'size-[5.5rem] rounded-[1.1rem] p-2',
       )}
     >
       <div className="relative h-full w-full">

@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import { PageHero } from '@/components/layout/PageHero';
-import { ArrowLink } from '@/components/ui/ArrowLink';
 import { Container } from '@/components/ui/Container';
 import { EditorialHeading } from '@/components/ui/EditorialHeading';
 import { Eyebrow } from '@/components/ui/Eyebrow';
@@ -63,12 +62,6 @@ export default async function ResearchAreasPage() {
           { label: 'Research', href: '/research' },
           { label: 'Areas' },
         ]}
-        actions={
-          <>
-            <ArrowLink href="/research">All research</ArrowLink>
-            <ArrowLink href="/publications">Publications</ArrowLink>
-          </>
-        }
       />
 
       <Section className="py-14 md:py-20">

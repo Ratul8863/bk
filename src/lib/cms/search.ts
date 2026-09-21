@@ -1,4 +1,5 @@
 import { getDatabase, getSeedDatabase } from '@/lib/cms/repository';
+import { researchProjectExternalUrl } from '@/lib/content/research-links';
 import type { ContentDatabase } from '@/types/content';
 
 export type SearchCategory =
@@ -52,22 +53,9 @@ function buildIndex(database: ContentDatabase): SearchResult[] {
   }
 
   for (const project of database.researchProjects) {
+    const byId = new Map(database.publications.map((pub) => [pub.id, pub]));
     const href =
-      project.url?.trim() ||
-      (() => {
-        for (const id of project.publicationIds ?? []) {
-          const pub = database.publications.find((item) => item.id === id);
-          if (!pub) continue;
-          if (pub.url?.trim()) return pub.url.trim();
-          if (pub.doi?.trim()) {
-            const doi = pub.doi
-              .trim()
-              .replace(/^https?:\/\/(dx\.)?doi\.org\//i, '');
-            if (doi) return `https://doi.org/${doi}`;
-          }
-        }
-        return '/research';
-      })();
+      researchProjectExternalUrl(project, byId) ?? '/research';
     results.push({
       id: project.id,
       category: 'research',
